@@ -2189,8 +2189,16 @@ async function registerAll() {
   progressText.textContent = 'YouTube API에 전송 중...';
 
   try {
-    // localizations 객체 빌드 (ko 제외 — YouTube 동영상 언어 설정으로 자동 처리)
-    const localizations = {};
+    // 1. 기존 localizations 먼저 조회 (기존 데이터 보존용)
+    progressText.textContent = '기존 번역 데이터 조회 중...';
+    const existingRes = await ytApiGet('videos', {
+      part: 'localizations',
+      id: state.selectedVideo.id
+    });
+    const existingLocalizations = existingRes.items?.[0]?.localizations || {};
+
+    // 2. 기존 데이터 + 새 번역 병합 (새 번역이 기존 덮어씀)
+    const localizations = { ...existingLocalizations };
     for (const [code, t] of Object.entries(state.translations)) {
       if (!t.error && t.title) {
         localizations[code] = {
@@ -2199,6 +2207,8 @@ async function registerAll() {
         };
       }
     }
+
+    progressText.textContent = `기존 ${Object.keys(existingLocalizations).length}개 + 새 번역 ${Object.keys(state.translations).length}개 병합 완료 → 총 ${Object.keys(localizations).length}개 전송 중...`;
 
     // videos.update — localizations만 업데이트 (snippet 건드리지 않음)
     const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=localizations`, {
@@ -2228,8 +2238,8 @@ async function registerAll() {
       <div class="alert alert-success">
         <span>✅</span>
         <div>
-          <strong>${Object.keys(localizations).length}개 언어 등록 완료!</strong><br>
-          <span style="font-size:12px; margin-top:4px; display:block;">YouTube Studio → 언어 탭에서 확인할 수 있어요. 반영까지 몇 분 걸릴 수 있어요.</span>
+          <strong>총 ${Object.keys(localizations).length}개 언어 등록 완료!</strong><br>
+          <span style="font-size:12px; margin-top:4px; display:block;">기존 번역 유지 + 새 번역 ${Object.keys(state.translations).length}개 추가/갱신. YouTube Studio → 언어 탭에서 확인하세요.</span>
         </div>
       </div>`;
 
