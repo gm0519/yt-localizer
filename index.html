@@ -1194,7 +1194,6 @@ const state = {
 // ═══════════════════════════════════════════
 const RECOMMENDED_LANGS = [
   // Tier 1 — 핵심
-  { code: 'ko', name: '한국어' },
   { code: 'ja', name: '일본어' },
   { code: 'en', name: '영어 (미국)' },
   { code: 'zh-Hans', name: '중국어 간체' },
@@ -1260,12 +1259,78 @@ const RECOMMENDED_CODES = new Set(RECOMMENDED_LANGS.map(l => l.code));
 window.onload = () => {
   loadSavedKeys();
   updateBadges();
+  // 추천 언어 먼저 selectedLangs에 추가 (렌더링 전!)
+  RECOMMENDED_LANGS.forEach(l => state.selectedLangs.add(l.code));
   state.allLangs = [...RECOMMENDED_LANGS];
   renderLangList();
-  // 추천 언어 기본 선택
-  RECOMMENDED_LANGS.forEach(l => state.selectedLangs.add(l.code));
   updateSelectedCount();
+  // YouTube 지원 언어 추가 로드
+  loadYouTubeLanguages();
+
+  // ── 자동 진입: 키 + 로그인 다 있으면 바로 영상 목록으로
+  if (state.geminiKey && state.youtubeClientId && state.accessToken) {
+    goToStep(1);
+  }
 };
+
+// YouTube i18nLanguages API로 전체 언어 로드
+async function loadYouTubeLanguages() {
+  // API 키 없이 사용 가능한 하드코딩 추가 언어 목록
+  const EXTRA_LANGS = [
+    { code: 'sq', name: '알바니아어' },
+    { code: 'hy', name: '아르메니아어' },
+    { code: 'az', name: '아제르바이잔어' },
+    { code: 'eu', name: '바스크어' },
+    { code: 'be', name: '벨라루스어' },
+    { code: 'bs', name: '보스니아어' },
+    { code: 'gl', name: '갈리시아어' },
+    { code: 'ka', name: '조지아어' },
+    { code: 'gu', name: '구자라트어' },
+    { code: 'ht', name: '아이티 크리올어' },
+    { code: 'ha', name: '하우사어' },
+    { code: 'ig', name: '이그보어' },
+    { code: 'is', name: '아이슬란드어' },
+    { code: 'jv', name: '자바어' },
+    { code: 'kn', name: '칸나다어' },
+    { code: 'kk', name: '카자흐어' },
+    { code: 'km', name: '크메르어' },
+    { code: 'ky', name: '키르기스어' },
+    { code: 'lo', name: '라오어' },
+    { code: 'la', name: '라틴어' },
+    { code: 'lb', name: '룩셈부르크어' },
+    { code: 'mk', name: '마케도니아어' },
+    { code: 'mg', name: '말라가시어' },
+    { code: 'mt', name: '몰타어' },
+    { code: 'mi', name: '마오리어' },
+    { code: 'mn', name: '몽골어' },
+    { code: 'my', name: '미얀마어' },
+    { code: 'ne', name: '네팔어' },
+    { code: 'or', name: '오디아어' },
+    { code: 'ps', name: '파슈토어' },
+    { code: 'pa', name: '펀자브어' },
+    { code: 'sm', name: '사모아어' },
+    { code: 'gd', name: '스코틀랜드 게일어' },
+    { code: 'si', name: '신할라어' },
+    { code: 'so', name: '소말리아어' },
+    { code: 'st', name: '소토어' },
+    { code: 'su', name: '순다어' },
+    { code: 'tg', name: '타지크어' },
+    { code: 'tk', name: '투르크멘어' },
+    { code: 'tt', name: '타타르어' },
+    { code: 'ug', name: '위구르어' },
+    { code: 'uz', name: '우즈베크어' },
+    { code: 'cy', name: '웨일스어' },
+    { code: 'xh', name: '코사어' },
+    { code: 'yi', name: '이디시어' },
+    { code: 'yo', name: '요루바어' },
+  ];
+
+  // 추천에 없는 것만 추가
+  const newLangs = EXTRA_LANGS.filter(l => !RECOMMENDED_CODES.has(l.code));
+  state.allLangs = [...RECOMMENDED_LANGS, ...newLangs];
+  renderLangList();
+  updateSelectedCount();
+}
 
 function loadSavedKeys() {
   const gk = localStorage.getItem('yt_localizer_gemini_key');
@@ -1652,25 +1717,45 @@ async function startTranslation() {
 
   state.translations = {};
 
-  // 청크 단위로 번역 (한 번에 15개 언어씩)
-  const chunkSize = 15;
+  // 청크 단위로 번역 (한 번에 10개씩 — 429 방지)
+  const chunkSize = 10;
   let done = 0;
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   for (let i = 0; i < langs.length; i += chunkSize) {
     const chunk = langs.slice(i, i + chunkSize);
-    try {
-      const result = await translateChunk(title, desc, chunk);
-      Object.assign(state.translations, result);
-    } catch (e) {
-      console.error('번역 오류:', e);
-      chunk.forEach(l => {
-        state.translations[l.code] = { title: `[번역 실패] ${l.name}`, description: desc, error: true };
-      });
+
+    // 429 재시도 로직 (최대 3회)
+    let result = null;
+    for (let retry = 0; retry < 3; retry++) {
+      try {
+        result = await translateChunk(title, desc, chunk);
+        break;
+      } catch (e) {
+        if (e.message.includes('429') && retry < 2) {
+          const waitSec = (retry + 1) * 8;
+          document.getElementById('translate-progress-text').textContent =
+            `⏳ API 한도 초과 — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
+          await sleep(waitSec * 1000);
+        } else {
+          console.error('번역 오류:', e);
+          chunk.forEach(l => {
+            state.translations[l.code] = { title: `[번역 실패] ${l.name}`, description: desc, error: true };
+          });
+          break;
+        }
+      }
     }
+    if (result) Object.assign(state.translations, result);
+
     done += chunk.length;
     const pct = Math.round((done / langs.length) * 100);
     document.getElementById('translate-progress-bar').style.width = `${pct}%`;
     document.getElementById('translate-progress-text').textContent = `${done} / ${langs.length} 언어 완료`;
+
+    // 청크 사이 3초 딜레이 (429 방지)
+    if (i + chunkSize < langs.length) await sleep(3000);
   }
 
   renderTranslationResults(langs);
@@ -1711,7 +1796,7 @@ Return JSON in this exact format:
   }
 }`;
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.geminiKey}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1720,7 +1805,10 @@ Return JSON in this exact format:
     })
   });
 
-  if (!res.ok) throw new Error(`Gemini API 오류: ${res.status}`);
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API 오류: ${res.status} ${errText.includes('429') ? '429' : ''}`);
+  }
 
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
