@@ -1721,14 +1721,18 @@ async function startTranslation() {
   // 청크 단위로 번역 (한 번에 10개씩 — 429 방지)
   const chunkSize = 10;
   let done = 0;
+  let stopped = false;
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const progressBar = document.getElementById('translate-progress-bar');
+  const progressText = document.getElementById('translate-progress-text');
 
   for (let i = 0; i < langs.length; i += chunkSize) {
     const chunk = langs.slice(i, i + chunkSize);
-
-    // 429 재시도 로직 (최대 3회)
     let result = null;
+    let chunkError = null;
+
+    // 429는 최대 3회 재시도 / 그 외 오류는 즉시 중단
     for (let retry = 0; retry < 3; retry++) {
       try {
         result = await translateChunk(title, desc, chunk);
@@ -1736,24 +1740,52 @@ async function startTranslation() {
       } catch (e) {
         if (e.message.includes('429') && retry < 2) {
           const waitSec = (retry + 1) * 8;
-          document.getElementById('translate-progress-text').textContent =
+          progressText.textContent =
             `⏳ API 한도 초과 — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
           await sleep(waitSec * 1000);
         } else {
-          console.error('번역 오류:', e);
-          chunk.forEach(l => {
-            state.translations[l.code] = { title: `[번역 실패] ${l.name}`, description: desc, error: true };
-          });
+          chunkError = e;
           break;
         }
       }
     }
+
+    // 에러 발생 시 즉시 중단
+    if (chunkError) {
+      stopped = true;
+      progressBar.style.background = 'var(--error)';
+      progressText.textContent = `❌ 번역 중단 (${done}/${langs.length} 완료) — ${chunkError.message}`;
+
+      // 완료된 부분만 결과 렌더링
+      const doneLangs = langs.slice(0, done);
+      if (doneLangs.length > 0) {
+        renderTranslationResults(doneLangs);
+        document.getElementById('btn-next-4').disabled = false;
+      }
+
+      // 에러 알림
+      const resultWrap = document.getElementById('translation-results');
+      resultWrap.insertAdjacentHTML('beforebegin', `
+        <div class="alert alert-error" style="margin-bottom:16px;">
+          <span>❌</span>
+          <div>
+            <strong>번역 중단됨</strong> — ${chunkError.message}<br>
+            <span style="font-size:13px;">${done}개 언어만 완료됐어요. 실패 언어는 개별 [재번역] 버튼으로 다시 시도하세요.</span>
+          </div>
+        </div>`);
+
+      btn.disabled = false;
+      btn.innerHTML = '🔄 전체 재번역';
+      showToast(`번역 중단: ${chunkError.message}`, 'error');
+      return;
+    }
+
     if (result) Object.assign(state.translations, result);
 
     done += chunk.length;
     const pct = Math.round((done / langs.length) * 100);
-    document.getElementById('translate-progress-bar').style.width = `${pct}%`;
-    document.getElementById('translate-progress-text').textContent = `${done} / ${langs.length} 언어 완료`;
+    progressBar.style.width = `${pct}%`;
+    progressText.textContent = `${done} / ${langs.length} 언어 완료`;
 
     // 청크 사이 3초 딜레이 (429 방지)
     if (i + chunkSize < langs.length) await sleep(3000);
@@ -1763,36 +1795,42 @@ async function startTranslation() {
   btn.disabled = false;
   btn.innerHTML = '🔄 전체 재번역';
   document.getElementById('btn-next-4').disabled = false;
-  showToast(`${langs.length}개 언어 번역 완료!`, 'success');
+  showToast(`${langs.length}개 언어 번역 완료! 🎉`, 'success');
 }
 
 async function translateChunk(title, desc, langs) {
   const langList = langs.map(l => `- ${l.name} (${l.code})`).join('\n');
+
+  // 특수문자 이스케이프 — JSON 파싱 오류 방지
+  const safeTitle = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const safeDesc = desc.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   const prompt = `You are a professional translator specializing in YouTube music channel metadata.
 Translate the following YouTube video title and description into the specified languages.
 
 STRICT RULES:
 1. Title must be 100 characters or fewer in the target language. If it exceeds 100 chars, shorten it naturally while preserving the core meaning.
-2. Preserve ALL line breaks in the description exactly as in the original.
+2. Preserve ALL line breaks (\\n) in the description exactly as in the original.
 3. Keep the overall tone and nuance appropriate for a music playlist channel targeting 20-40 year olds.
-4. Return ONLY valid JSON, no markdown, no explanation.
-5. Korean SEO keywords in descriptions should be translated to equivalent SEO terms in the target language.
+4. Return ONLY a valid JSON object. No markdown fences, no explanation, no extra text.
+5. All string values in JSON must properly escape special characters: use \\" for quotes, \\\\ for backslash.
+6. Korean SEO keywords in descriptions should be translated to equivalent SEO terms in the target language.
+7. IMPORTANT: Never use unescaped double quotes inside JSON string values.
 
-ORIGINAL TITLE: ${title}
+ORIGINAL TITLE: ${safeTitle}
 
 ORIGINAL DESCRIPTION:
-${desc}
+${safeDesc}
 
 TARGET LANGUAGES:
 ${langList}
 
-Return JSON in this exact format:
+Return ONLY this JSON structure (no other text):
 {
   "translations": {
     "LANG_CODE": {
-      "title": "translated title here",
-      "description": "translated description here"
+      "title": "translated title",
+      "description": "translated description"
     }
   }
 }`;
@@ -1802,7 +1840,11 @@ Return JSON in this exact format:
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 8192,
+        responseMimeType: 'application/json'
+      }
     })
   });
 
@@ -1814,11 +1856,43 @@ Return JSON in this exact format:
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-  // JSON 파싱
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('JSON 파싱 실패');
+  // JSON 파싱 — 여러 방어 레이어
+  let parsed = null;
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  // 1차: 직접 파싱
+  try {
+    parsed = JSON.parse(text);
+  } catch (_) {}
+
+  // 2차: 코드블럭 제거 후 파싱
+  if (!parsed) {
+    try {
+      const clean = text.replace(/^```[\w]*\n?/,'').replace(/```$/,'').trim();
+      parsed = JSON.parse(clean);
+    } catch (_) {}
+  }
+
+  // 3차: 중괄호 범위 추출 후 파싱
+  if (!parsed) {
+    try {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (_) {}
+  }
+
+  // 4차: 깨진 JSON 복구 시도 (trailing comma 등)
+  if (!parsed) {
+    try {
+      const fixed = text
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']')
+        .replace(/[\x00-\x1F\x7F]/g, ' ');
+      const match = fixed.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (_) {}
+  }
+
+  if (!parsed) throw new Error('JSON 파싱 실패');
   return parsed.translations || {};
 }
 
