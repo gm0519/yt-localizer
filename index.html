@@ -403,6 +403,24 @@
     gap: 10px;
   }
 
+  .type-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .type-shorts {
+    background: rgba(252,108,143,0.15);
+    color: var(--accent2);
+  }
+
+  .type-long {
+    background: rgba(124,108,252,0.1);
+    color: var(--text3);
+  }
+
   .privacy-badge {
     padding: 2px 8px;
     border-radius: 4px;
@@ -1498,7 +1516,7 @@ async function loadVideoList(pageToken = null) {
 
     // 3. 상태 정보 가져오기 (비공개/예약 등)
     const videoRes = await ytApiGet('videos', {
-      part: 'snippet,status,statistics',
+      part: 'snippet,status,statistics,contentDetails',
       id: videoIds
     });
 
@@ -1512,7 +1530,8 @@ async function loadVideoList(pageToken = null) {
       publishAt: v.status.publishAt || null,
       viewCount: v.statistics?.viewCount || null,
       likeCount: v.statistics?.likeCount || null,
-      commentCount: v.statistics?.commentCount || null
+      commentCount: v.statistics?.commentCount || null,
+      duration: v.contentDetails?.duration || null
     }));
 
     state.videoList = [...state.videoList, ...videos];
@@ -1552,7 +1571,11 @@ function renderVideoList() {
         <div class="video-title">${escHtml(v.title)}</div>
         <div class="video-meta">
           <span class="privacy-badge ${getPrivacyClass(v.privacyStatus)}">${getPrivacyLabel(v)}</span>
-          <span>${formatDate(v.publishedAt)}</span>
+          ${getVideoTypeBadge(v)}
+          ${v.publishAt
+            ? `<span style="color:var(--accent);">📅 ${formatDateTime(v.publishAt)} 게시예정</span>`
+            : `<span>${formatDate(v.publishedAt)}</span>`
+          }
         </div>
         <div class="video-stats">
           ${v.viewCount !== null ? `<span>👁 ${fmtNum(v.viewCount)}</span>` : ''}
@@ -2218,6 +2241,31 @@ function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function isShorts(duration) {
+  if (!duration) return false;
+  // ISO 8601 파싱: PT1M30S → 90초
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return false;
+  const h = parseInt(match[1] || 0);
+  const m = parseInt(match[2] || 0);
+  const s = parseInt(match[3] || 0);
+  const total = h * 3600 + m * 60 + s;
+  return total <= 60; // 60초 이하 = 쇼츠
+}
+
+function getVideoTypeBadge(v) {
+  if (isShorts(v.duration)) {
+    return '<span class="type-badge type-shorts">⚡ Shorts</span>';
+  }
+  return '<span class="type-badge type-long">▶ 롱폼</span>';
 }
 </script>
 </body>
