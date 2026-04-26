@@ -2151,12 +2151,12 @@ async function registerAll() {
   progressText.textContent = 'YouTube API에 전송 중...';
 
   try {
-    // localizations 객체 빌드
+    // localizations 객체 빌드 (ko 제외 — YouTube 동영상 언어 설정으로 자동 처리)
     const localizations = {};
     for (const [code, t] of Object.entries(state.translations)) {
       if (!t.error && t.title) {
         localizations[code] = {
-          title: t.title.slice(0, 100), // 100자 강제 제한
+          title: t.title.slice(0, 100),
           description: t.description || ''
         };
       }
@@ -2175,8 +2175,7 @@ async function registerAll() {
         snippet: {
           title: state.selectedVideo.title,
           description: state.selectedVideo.description,
-          categoryId: '10', // Music
-          defaultLanguage: 'en'
+          categoryId: '10' // Music
         }
       })
     });
