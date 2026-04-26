@@ -1345,9 +1345,13 @@ function handleGoogleLogin() {
     'https://www.googleapis.com/auth/youtube.force-ssl'
   ].join(' ');
 
+  // redirect_uri: 현재 페이지 URL (끝에 / 보장)
+  const currentUrl = window.location.origin + window.location.pathname;
+  const redirectUri = currentUrl.endsWith('/') ? currentUrl : currentUrl + '/';
+
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: window.location.origin + window.location.pathname,
+    redirect_uri: redirectUri,
     response_type: 'token',
     scope: scope,
     include_granted_scopes: 'true',
