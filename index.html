@@ -1159,6 +1159,14 @@
     </button>
   </div>
 
+  <!-- 복구 도구 -->
+  <div style="margin-top:24px; padding:16px; background:var(--surface2); border:1px solid var(--border); border-radius:12px;">
+    <div style="font-family:'DM Mono',monospace; font-size:12px; color:var(--warning); margin-bottom:8px;">🔧 제목 및 설명 언어 복구</div>
+    <div style="font-size:13px; color:var(--text2); margin-bottom:12px;">앱이 "제목 및 설명 언어"를 영어로 바꿔버린 경우 여기서 복구하세요. 번역 내용은 그대로 유지되고 언어 설정만 한국어로 돌아와요.</div>
+    <button class="btn btn-secondary btn-sm" onclick="fixDefaultLanguage()">🔧 제목/설명 언어를 한국어(ko)로 복구</button>
+    <div id="fix-lang-result" style="margin-top:8px; font-size:12px;"></div>
+  </div>
+
   <div id="register-progress" style="display:none; margin-top:24px;">
     <div class="progress-bar-wrap">
       <div class="progress-bar" id="register-progress-bar" style="width:0%"></div>
@@ -2162,8 +2170,8 @@ async function registerAll() {
       }
     }
 
-    // videos.update 단 1회 호출
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=localizations,snippet`, {
+    // videos.update — localizations만 업데이트 (snippet 건드리지 않음)
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=localizations`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${state.accessToken}`,
@@ -2171,12 +2179,7 @@ async function registerAll() {
       },
       body: JSON.stringify({
         id: state.selectedVideo.id,
-        localizations: localizations,
-        snippet: {
-          title: state.selectedVideo.title,
-          description: state.selectedVideo.description,
-          categoryId: '10' // Music
-        }
+        localizations: localizations
       })
     });
 
@@ -2223,6 +2226,50 @@ async function registerAll() {
     showToast(`등록 실패: ${e.message}`, 'error');
     btn.disabled = false;
   }
+}
+
+async function fixDefaultLanguage() {
+  const btn = document.querySelector('[onclick="fixDefaultLanguage()"]');
+  const resultEl = document.getElementById('fix-lang-result');
+  if (!state.selectedVideo) { resultEl.innerHTML = '<span style="color:var(--error);">영상을 먼저 선택해주세요.</span>'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '복구 중...';
+  resultEl.innerHTML = '';
+
+  try {
+    // snippet만 업데이트 — defaultLanguage를 ko로 강제 복구
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${state.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: state.selectedVideo.id,
+        snippet: {
+          title: state.selectedVideo.title,
+          description: state.selectedVideo.description,
+          categoryId: '10',
+          defaultLanguage: 'ko'
+        }
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    resultEl.innerHTML = '<span style="color:var(--accent3);">✅ 복구 완료! YouTube Studio에서 확인해보세요.</span>';
+    showToast('제목/설명 언어 복구 완료!', 'success');
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:var(--error);">❌ 실패: ${e.message}</span>`;
+    showToast('복구 실패', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔧 제목/설명 언어를 한국어(ko)로 복구';
 }
 
 function restartFlow() {
