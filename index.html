@@ -1888,12 +1888,18 @@ async function translateChunk(title, desc, langs) {
   const prompt = `You are a professional translator for a Korean YouTube music playlist channel.
 
 TRANSLATION RULES:
-1. Translate ONLY Korean text. Keep ALL English text exactly as-is (including English words, brand names, hashtags, URLs, symbols).
-2. Title: 100 characters max in target language. Shorten naturally if needed.
-3. Preserve ALL line breaks exactly as in the original.
-4. Tone: trendy, urban, suitable for 20-40 year olds.
-5. Korean hashtags (#카페BGM etc): translate the Korean part only, keep # symbol and English words as-is.
-6. Return ONLY raw JSON, no markdown code blocks, no explanation.
+1. Translate ALL Korean text into the target language. Every Korean word/sentence must be translated.
+2. Keep English words, brand names, proper nouns, URLs, and symbols exactly as-is (do NOT translate them into the target language).
+   Example: "들자마자 고양이가 반응하는 플리 | JazzHop Groove · Focus BGM"
+   → English(en): "The playlist cats react to instantly | JazzHop Groove · Focus BGM"
+   → Japanese(ja): "すぐに猫が反応するプレイリスト | JazzHop Groove · Focus BGM"
+   (Korean part translated, English part "JazzHop Groove · Focus BGM" kept as-is)
+3. Title: 100 characters max in target language. Shorten naturally if needed.
+4. Preserve ALL line breaks exactly as in the original.
+5. Tone: trendy, urban, suitable for 20-40 year olds.
+6. Korean hashtags (#카페BGM etc): translate the Korean part only, keep # symbol and English words as-is.
+   Example: #카페BGM → #CafeBGM (en) / #カフェBGM (ja)
+7. Return ONLY raw JSON, no markdown code blocks, no explanation.
 
 ORIGINAL TITLE:
 ${title}
