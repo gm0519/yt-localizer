@@ -24,11 +24,14 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  html { font-size: 16px; }
+
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Noto Sans KR', sans-serif;
     font-weight: 300;
+    font-size: 15px;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -60,7 +63,7 @@
   .logo {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 18px;
+    font-size: 20px;
     letter-spacing: -0.5px;
     display: flex;
     align-items: center;
@@ -82,7 +85,7 @@
 
   .header-status {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--text3);
     display: flex;
     align-items: center;
@@ -96,7 +99,7 @@
     padding: 4px 10px;
     border-radius: 20px;
     border: 1px solid var(--border);
-    font-size: 10px;
+    font-size: 15px;
   }
 
   .status-badge.active {
@@ -141,7 +144,7 @@
 
   .step-label {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--accent);
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -151,7 +154,7 @@
   .step-title {
     font-family: 'Syne', sans-serif;
     font-weight: 700;
-    font-size: 36px;
+    font-size: 42px;
     line-height: 1.1;
     margin-bottom: 8px;
     letter-spacing: -1px;
@@ -159,7 +162,7 @@
 
   .step-desc {
     color: var(--text2);
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
     margin-bottom: 40px;
   }
@@ -179,7 +182,7 @@
   .card-title {
     font-family: 'Syne', sans-serif;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     margin-bottom: 16px;
     display: flex;
     align-items: center;
@@ -193,7 +196,7 @@
 
   .input-label {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--text2);
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -211,7 +214,7 @@
     padding: 12px 16px;
     color: var(--text);
     font-family: 'DM Mono', monospace;
-    font-size: 13px;
+    font-size: 15px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
@@ -227,7 +230,7 @@
     resize: vertical;
     min-height: 120px;
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.6;
   }
 
@@ -242,7 +245,7 @@
     cursor: pointer;
     font-family: 'Syne', sans-serif;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     transition: all 0.2s;
     text-decoration: none;
   }
@@ -292,7 +295,7 @@
 
   .btn-sm {
     padding: 6px 14px;
-    font-size: 12px;
+    font-size: 16px;
     border-radius: 8px;
   }
 
@@ -382,7 +385,7 @@
   .video-info { flex: 1; min-width: 0; }
 
   .video-title {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -392,7 +395,7 @@
 
   .video-meta {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--text3);
     display: flex;
     align-items: center;
@@ -402,7 +405,7 @@
   .privacy-badge {
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 500;
   }
 
@@ -418,7 +421,7 @@
 
   .lang-section-title {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--text2);
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -445,7 +448,7 @@
     border: 1px solid var(--border);
     cursor: pointer;
     transition: all 0.15s;
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .lang-checkbox:hover { border-color: var(--accent); }
@@ -463,10 +466,10 @@
     border-color: var(--accent);
   }
 
-  .lang-name { font-size: 13px; }
+  .lang-name { font-size: 15px; }
   .lang-code {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 15px;
     color: var(--text3);
     margin-left: auto;
   }
@@ -505,13 +508,13 @@
   .translation-lang {
     font-family: 'Syne', sans-serif;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
     flex: 1;
   }
 
   .translation-code {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 15px;
     color: var(--text3);
     padding: 2px 8px;
     background: var(--surface2);
@@ -538,7 +541,7 @@
 
   .translation-field-label {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 15px;
     color: var(--text3);
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -547,12 +550,12 @@
 
   .translation-field textarea {
     min-height: 80px;
-    font-size: 12px;
+    font-size: 16px;
   }
 
   /* ── 번역 제목 인라인 표시 ── */
   .translation-title-preview {
-    font-size: 12px;
+    font-size: 16px;
     color: var(--text2);
     white-space: nowrap;
     overflow: hidden;
@@ -581,7 +584,7 @@
   .alert {
     padding: 12px 16px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 15px;
     margin-bottom: 16px;
     display: flex;
     align-items: flex-start;
@@ -639,7 +642,7 @@
   .step-nav-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     cursor: pointer;
     opacity: 0.3;
     transition: opacity 0.2s;
@@ -649,7 +652,7 @@
   .step-nav-item.current { opacity: 1; }
 
   .step-nav-dot {
-    width: 8px; height: 8px;
+    width: 10px; height: 10px;
     border-radius: 50%;
     background: var(--text2);
     transition: all 0.2s;
@@ -658,8 +661,8 @@
 
   .step-nav-item.current .step-nav-dot {
     background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    width: 10px; height: 10px;
+    box-shadow: 0 0 10px var(--accent);
+    width: 13px; height: 13px;
   }
 
   .step-nav-item.done .step-nav-dot {
@@ -668,7 +671,7 @@
 
   .step-nav-label {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 14px;
     color: currentColor;
     white-space: nowrap;
   }
@@ -694,14 +697,14 @@
     align-items: flex-start;
     gap: 12px;
     margin-bottom: 10px;
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .summary-row:last-child { margin-bottom: 0; }
 
   .summary-key {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--text3);
     min-width: 80px;
     padding-top: 1px;
@@ -725,7 +728,7 @@
     color: white;
     border-radius: 11px;
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 15px;
     font-weight: 500;
   }
 
@@ -745,7 +748,7 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--text3);
-    font-size: 14px;
+    font-size: 16px;
   }
 
   /* ── LOAD MORE ── */
@@ -771,7 +774,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 18px;
-    font-size: 13px;
+    font-size: 15px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -826,7 +829,7 @@
 
   .modal-desc {
     color: var(--text2);
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
     margin-bottom: 24px;
   }
@@ -843,7 +846,7 @@
   /* ── CHEVRON ── */
   .chevron {
     transition: transform 0.2s;
-    font-size: 12px;
+    font-size: 16px;
     color: var(--text3);
   }
   .chevron.open { transform: rotate(180deg); }
@@ -855,7 +858,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 15px;
     flex-shrink: 0;
   }
   .trans-status.done { background: rgba(108,252,184,0.2); color: var(--accent3); }
@@ -864,7 +867,7 @@
 
   .char-count {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 15px;
     text-align: right;
     margin-top: 4px;
   }
@@ -880,8 +883,8 @@
   }
 
   .empty-icon { font-size: 48px; margin-bottom: 16px; }
-  .empty-title { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text2); margin-bottom: 8px; }
-  .empty-desc { font-size: 13px; line-height: 1.6; }
+  .empty-title { font-family: 'Syne', sans-serif; font-size: 20px; color: var(--text2); margin-bottom: 8px; }
+  .empty-desc { font-size: 15px; line-height: 1.6; }
 </style>
 </head>
 <body>
