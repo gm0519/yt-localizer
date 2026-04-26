@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Localizer — LAFIENA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6cfc;
+    --accent2: #fc6c8f;
+    --accent3: #6cfcb8;
+    --text: #e8e8f0;
+    --text2: #8888aa;
+    --text3: #555570;
+    --success: #6cfcb8;
+    --error: #fc6c8f;
+    --warning: #fccc6c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 배경 노이즈 텍스처 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .header-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 10px;
+  }
+
+  .status-badge.active {
+    border-color: var(--accent3);
+    color: var(--accent3);
+  }
+
+  .status-badge.inactive {
+    color: var(--text3);
+  }
+
+  .status-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── MAIN ── */
+  main {
+    position: relative;
+    z-index: 1;
+    padding-top: 80px;
+    min-height: 100vh;
+  }
+
+  /* ── STEP SYSTEM ── */
+  .step {
+    display: none;
+    min-height: calc(100vh - 80px);
+    padding: 48px 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .step.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .step-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+  }
+
+  .step-desc {
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: var(--accent); }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── INPUTS ── */
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  .input-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,108,252,0.1);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #9080ff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(124,108,252,0.3);
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-success {
+    background: var(--accent3);
+    color: #0a0a0f;
+  }
+
+  .btn-success:hover {
+    background: #80ffcc;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(108,252,184,0.3);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+  }
+
+  .btn-danger:hover {
+    background: rgba(252,108,143,0.1);
+  }
+
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    color: var(--text);
+    border-color: var(--text2);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  /* ── GOOGLE LOGIN BTN ── */
+  .btn-google {
+    background: white;
+    color: #333;
+    border: 1px solid #ddd;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    padding: 14px 28px;
+    font-size: 15px;
+  }
+
+  .btn-google:hover {
+    box-shadow: 0 4px 20px rgba(255,255,255,0.15);
+    transform: translateY(-1px);
+  }
+
+  .google-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ── VIDEO LIST ── */
+  .video-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .video-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .video-item:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .video-item.selected {
+    border-color: var(--accent);
+    background: rgba(124,108,252,0.08);
+  }
+
+  .video-thumb {
+    width: 80px;
+    height: 45px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--surface2);
+    flex-shrink: 0;
+  }
+
+  .video-info { flex: 1; min-width: 0; }
+
+  .video-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+
+  .video-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .privacy-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .privacy-public { background: rgba(108,252,184,0.15); color: var(--accent3); }
+  .privacy-private { background: rgba(252,108,143,0.15); color: var(--accent2); }
+  .privacy-unlisted { background: rgba(252,204,108,0.15); color: var(--warning); }
+  .privacy-scheduled { background: rgba(124,108,252,0.15); color: var(--accent); }
+
+  /* ── 언어 선택 ── */
+  .lang-section {
+    margin-bottom: 24px;
+  }
+
+  .lang-section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .lang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+
+  .lang-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+  }
+
+  .lang-checkbox:hover { border-color: var(--accent); }
+
+  .lang-checkbox input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .lang-checkbox.checked {
+    background: rgba(124,108,252,0.08);
+    border-color: var(--accent);
+  }
+
+  .lang-name { font-size: 13px; }
+  .lang-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    margin-left: auto;
+  }
+
+  .lang-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* ── 번역 결과 ── */
+  .translation-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .translation-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .translation-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .translation-header:hover { background: var(--surface2); }
+
+  .translation-lang {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    flex: 1;
+  }
+
+  .translation-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    padding: 2px 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+  }
+
+  .translation-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .translation-body {
+    display: none;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .translation-body.open { display: block; }
+
+  .translation-field {
+    margin-top: 12px;
+  }
+
+  .translation-field-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .translation-field textarea {
+    min-height: 80px;
+    font-size: 12px;
+  }
+
+  /* ── 번역 제목 인라인 표시 ── */
+  .translation-title-preview {
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 6px;
+    height: 6px;
+    margin: 16px 0;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 6px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .alert-info {
+    background: rgba(124,108,252,0.1);
+    border: 1px solid rgba(124,108,252,0.3);
+    color: #b0a8ff;
+  }
+
+  .alert-success {
+    background: rgba(108,252,184,0.1);
+    border: 1px solid rgba(108,252,184,0.3);
+    color: var(--accent3);
+  }
+
+  .alert-error {
+    background: rgba(252,108,143,0.1);
+    border: 1px solid rgba(252,108,143,0.3);
+    color: var(--accent2);
+  }
+
+  .alert-warning {
+    background: rgba(252,204,108,0.1);
+    border: 1px solid rgba(252,204,108,0.3);
+    color: var(--warning);
+  }
+
+  /* ── LOADING SPINNER ── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── STEP NAV ── */
+  .step-nav {
+    position: fixed;
+    left: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .step-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.2s;
+  }
+
+  .step-nav-item.done { opacity: 0.6; }
+  .step-nav-item.current { opacity: 1; }
+
+  .step-nav-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text2);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .step-nav-item.current .step-nav-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    width: 10px; height: 10px;
+  }
+
+  .step-nav-item.done .step-nav-dot {
+    background: var(--accent3);
+  }
+
+  .step-nav-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: currentColor;
+    white-space: nowrap;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* ── SUMMARY BOX ── */
+  .summary-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .summary-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  .summary-row:last-child { margin-bottom: 0; }
+
+  .summary-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    min-width: 80px;
+    padding-top: 1px;
+  }
+
+  .summary-val {
+    color: var(--text);
+    flex: 1;
+    line-height: 1.5;
+  }
+
+  /* ── COUNT BADGE ── */
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: var(--accent);
+    color: white;
+    border-radius: 11px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-bar {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .search-bar input {
+    padding-left: 40px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 14px;
+  }
+
+  /* ── LOAD MORE ── */
+  .load-more-wrap {
+    text-align: center;
+    margin-top: 16px;
+  }
+
+  /* ── TOAST ── */
+  #toast-container {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+    pointer-events: auto;
+    max-width: 320px;
+  }
+
+  .toast.success { border-color: var(--accent3); color: var(--accent3); }
+  .toast.error { border-color: var(--accent2); color: var(--accent2); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 480px;
+    width: 90%;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .modal-desc {
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .step-nav { display: none; }
+    .step { padding: 32px 20px; }
+    header { padding: 14px 20px; }
+    .step-title { font-size: 26px; }
+    .lang-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── CHEVRON ── */
+  .chevron {
+    transition: transform 0.2s;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* ──번역 상태 아이콘 ── */
+  .trans-status {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .trans-status.done { background: rgba(108,252,184,0.2); color: var(--accent3); }
+  .trans-status.pending { background: rgba(124,108,252,0.2); color: var(--accent); }
+  .trans-status.error { background: rgba(252,108,143,0.2); color: var(--accent2); }
+
+  .char-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  .char-count.over { color: var(--error); }
+  .char-count.ok { color: var(--text3); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-title { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text2); margin-bottom: 8px; }
+  .empty-desc { font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    YT Localizer
+    <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
+  </div>
+  <div class="header-status">
+    <div class="status-badge" id="badge-gemini">
+      <div class="status-dot"></div>
+      Gemini
+    </div>
+    <div class="status-badge" id="badge-youtube">
+      <div class="status-dot"></div>
+      YouTube
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="goToStep(0)" style="font-size:11px;">⚙ 설정</button>
+  </div>
+</header>
+
+<!-- STEP NAV -->
+<nav class="step-nav" id="step-nav">
+  <div class="step-nav-item" onclick="goToStep(0)">
+    <div class="step-nav-dot"></div>
+    <span class="step-nav-label">설정</span>
+  </div>
+  <div class="step-nav-item" onclick="goToStep(1)">
+    <div class="step-nav-dot"></div>
+    <span class="step-nav-label">영상 선택</span>
+  </div>
+  <div class="step-nav-item" onclick="goToStep(2)">
+    <div class="step-nav-dot"></div>
+    <span class="step-nav-label">언어 선택</span>
+  </div>
+  <div class="step-nav-item" onclick="goToStep(3)">
+    <div class="step-nav-dot"></div>
+    <span class="step-nav-label">번역</span>
+  </div>
+  <div class="step-nav-item" onclick="goToStep(4)">
+    <div class="step-nav-dot"></div>
+    <span class="step-nav-label">등록</span>
+  </div>
+</nav>
+
+<main>
+
+<!-- ───────────────────────────────────────────
+     STEP 0: 설정
+──────────────────────────────────────────── -->
+<section class="step active" id="step-0">
+  <div class="step-label">STEP 00</div>
+  <h1 class="step-title">초기 설정</h1>
+  <p class="step-desc">API 키를 입력하고 YouTube 계정에 로그인하세요.<br>입력한 정보는 브라우저에만 저장되며 외부로 전송되지 않아요.</p>
+
+  <div class="card">
+    <div class="card-title">🔑 API 키 설정</div>
+
+    <div class="input-group">
+      <label class="input-label">Gemini API Key</label>
+      <input type="password" id="gemini-key" placeholder="AIzaSy..." autocomplete="off">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">YouTube OAuth Client ID</label>
+      <input type="text" id="youtube-client-id" placeholder="123456789-xxx.apps.googleusercontent.com" autocomplete="off">
+    </div>
+
+    <div class="alert alert-info" style="margin-top:8px; margin-bottom:0;">
+      <span>💡</span>
+      <span>키는 브라우저 localStorage에만 저장돼요. 코드에 포함되지 않아 GitHub에 올려도 안전해요.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔐 YouTube 로그인</div>
+    <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">채널 소유자 계정으로 로그인해야 영상 목록과 수정 권한을 얻을 수 있어요.</p>
+    <button class="btn btn-google" id="btn-login" onclick="handleGoogleLogin()">
+      <svg class="google-icon" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Google 계정으로 로그인
+    </button>
+    <div id="login-status" style="margin-top:12px; font-size:13px; color:var(--text3);"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveSettingsAndNext()">
+      저장하고 시작하기 →
+    </button>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────
+     STEP 1: 영상 선택
+──────────────────────────────────────────── -->
+<section class="step" id="step-1">
+  <div class="step-label">STEP 01</div>
+  <h1 class="step-title">영상 선택</h1>
+  <p class="step-desc">번역을 등록할 영상을 선택하세요. 비공개·예약·심사 중 영상도 모두 표시돼요.</p>
+
+  <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+    <button class="btn btn-secondary btn-sm" onclick="loadVideoList()">
+      🔄 새로고침
+    </button>
+    <div style="flex:1; min-width:200px;">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="video-search" placeholder="영상 제목 검색..." oninput="filterVideos()" style="font-family:'Noto Sans KR',sans-serif;">
+      </div>
+    </div>
+  </div>
+
+  <div id="video-list-wrap">
+    <div class="empty-state">
+      <div class="empty-icon">📺</div>
+      <div class="empty-title">영상 목록 로딩 중...</div>
+      <div class="empty-desc">잠시만 기다려주세요.</div>
+    </div>
+  </div>
+
+  <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+    <button class="btn btn-ghost btn-sm" onclick="loadMoreVideos()">더 보기</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToStep(0)">← 뒤로</button>
+    <button class="btn btn-primary" id="btn-next-2" onclick="goToStep(2)" disabled>
+      언어 선택하기 →
+    </button>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────
+     STEP 2: 언어 선택
+──────────────────────────────────────────── -->
+<section class="step" id="step-2">
+  <div class="step-label">STEP 02</div>
+  <h1 class="step-title">언어 선택</h1>
+  <p class="step-desc">번역할 언어를 선택하세요. 추천 언어는 기본으로 선택되어 있어요.</p>
+
+  <div id="selected-video-summary" class="summary-box" style="display:none;"></div>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;" class="lang-controls">
+    <button class="btn btn-secondary btn-sm" onclick="selectAllLangs()">전체 선택</button>
+    <button class="btn btn-secondary btn-sm" onclick="deselectAllLangs()">전체 해제</button>
+    <button class="btn btn-secondary btn-sm" onclick="selectRecommended()">추천만 선택</button>
+    <span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text2); display:flex; align-items:center; gap:6px; margin-left:auto;">
+      선택됨: <span class="count-badge" id="selected-count">0</span>
+    </span>
+  </div>
+
+  <div id="lang-list-wrap">
+    <!-- JS로 렌더링 -->
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToStep(1)">← 뒤로</button>
+    <button class="btn btn-primary" onclick="goToStep(3)">번역 시작 →</button>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────
+     STEP 3: 번역
+──────────────────────────────────────────── -->
+<section class="step" id="step-3">
+  <div class="step-label">STEP 03</div>
+  <h1 class="step-title">번역</h1>
+  <p class="step-desc">원문을 확인하고 번역을 실행하세요. 각 언어별로 재번역하거나 직접 수정할 수 있어요.</p>
+
+  <!-- 원문 -->
+  <div class="card">
+    <div class="card-title">📝 원문 확인 및 수정</div>
+    <div class="input-group">
+      <label class="input-label">제목 (최대 100자)</label>
+      <input type="text" id="source-title" maxlength="200" oninput="updateSourceCharCount()">
+      <div class="char-count ok" id="source-title-count">0 / 100</div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">설명글</label>
+      <textarea id="source-desc" rows="6"></textarea>
+    </div>
+    <div class="alert alert-info">
+      <span>💡</span>
+      <span>제목이 100자를 초과하면 AI가 자동으로 줄여서 번역해요. 줄바꿈은 원본과 동일하게 유지돼요.</span>
+    </div>
+  </div>
+
+  <!-- 번역 실행 -->
+  <div style="display:flex; gap:12px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
+    <button class="btn btn-primary" id="btn-translate" onclick="startTranslation()">
+      🌍 전체 번역 시작
+    </button>
+    <span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text2);" id="translate-progress-text"></span>
+  </div>
+
+  <div class="progress-bar-wrap" id="translate-progress-wrap" style="display:none;">
+    <div class="progress-bar" id="translate-progress-bar"></div>
+  </div>
+
+  <!-- 번역 결과 -->
+  <div id="translation-results"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToStep(2)">← 뒤로</button>
+    <button class="btn btn-success" id="btn-next-4" onclick="goToStep(4)" disabled>
+      등록 검토하기 →
+    </button>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────
+     STEP 4: 등록
+──────────────────────────────────────────── -->
+<section class="step" id="step-4">
+  <div class="step-label">STEP 04</div>
+  <h1 class="step-title">자동 등록</h1>
+  <p class="step-desc">번역 결과를 YouTube 영상에 자동으로 등록해요. 단 1회 API 호출로 모든 언어가 한꺼번에 등록돼요.</p>
+
+  <div id="register-summary" class="summary-box"></div>
+
+  <div class="alert alert-warning">
+    <span>⚠️</span>
+    <span>기존에 등록된 번역이 있다면 덮어써요. 등록 전 번역 내용을 다시 한 번 확인해주세요.</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToStep(3)">← 번역 수정</button>
+    <button class="btn btn-success" id="btn-register" onclick="confirmRegister()">
+      🚀 자동 등록 시작
+    </button>
+  </div>
+
+  <div id="register-progress" style="display:none; margin-top:24px;">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="register-progress-bar" style="width:0%"></div>
+    </div>
+    <div id="register-progress-text" style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text2); margin-top:8px;"></div>
+  </div>
+
+  <div id="register-result" style="display:none; margin-top:24px;"></div>
+
+  <!-- 완료 후 다시 시작 -->
+  <div id="register-done-actions" style="display:none; margin-top:24px;">
+    <hr class="divider">
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="restartFlow()">다른 영상 번역하기</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">확인</div>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn btn-success" id="modal-confirm-btn">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const state = {
+  geminiKey: '',
+  youtubeClientId: '',
+  accessToken: null,
+  tokenExpiry: null,
+  currentStep: 0,
+  selectedVideo: null,
+  videoList: [],
+  filteredVideos: [],
+  nextPageToken: null,
+  selectedLangs: new Set(),
+  translations: {}, // { langCode: { title, description } }
+  allLangs: []
+};
+
+// ═══════════════════════════════════════════
+//  추천 50개 언어 (우선순위 순)
+// ═══════════════════════════════════════════
+const RECOMMENDED_LANGS = [
+  // Tier 1 — 핵심
+  { code: 'ko', name: '한국어' },
+  { code: 'ja', name: '일본어' },
+  { code: 'en', name: '영어 (미국)' },
+  { code: 'zh-Hans', name: '중국어 간체' },
+  { code: 'zh-Hant', name: '중국어 번체' },
+  { code: 'es', name: '스페인어' },
+  { code: 'es-419', name: '스페인어 (중남미)' },
+  { code: 'pt-BR', name: '포르투갈어 (브라질)' },
+  { code: 'pt-PT', name: '포르투갈어' },
+  { code: 'en-GB', name: '영어 (영국)' },
+  // Tier 2 — 주요 시장
+  { code: 'fr', name: '프랑스어' },
+  { code: 'de', name: '독일어' },
+  { code: 'it', name: '이탈리아어' },
+  { code: 'ru', name: '러시아어' },
+  { code: 'ar', name: '아랍어' },
+  { code: 'hi', name: '힌디어' },
+  { code: 'id', name: '인도네시아어' },
+  { code: 'ms', name: '말레이어' },
+  { code: 'th', name: '태국어' },
+  { code: 'vi', name: '베트남어' },
+  { code: 'tl', name: '타갈로그어 (필리핀)' },
+  { code: 'tr', name: '터키어' },
+  { code: 'nl', name: '네덜란드어' },
+  { code: 'pl', name: '폴란드어' },
+  { code: 'sv', name: '스웨덴어' },
+  // Tier 3 — 확장
+  { code: 'cs', name: '체코어' },
+  { code: 'da', name: '덴마크어' },
+  { code: 'fi', name: '핀란드어' },
+  { code: 'el', name: '그리스어' },
+  { code: 'hu', name: '헝가리어' },
+  { code: 'ro', name: '루마니아어' },
+  { code: 'uk', name: '우크라이나어' },
+  { code: 'he', name: '히브리어' },
+  { code: 'bn', name: '벵골어' },
+  { code: 'fa', name: '페르시아어' },
+  { code: 'ur', name: '우르두어' },
+  { code: 'ta', name: '타밀어' },
+  { code: 'te', name: '텔루구어' },
+  { code: 'ml', name: '말라얄람어' },
+  { code: 'mr', name: '마라티어' },
+  { code: 'no', name: '노르웨이어' },
+  { code: 'sk', name: '슬로바키아어' },
+  { code: 'hr', name: '크로아티아어' },
+  { code: 'bg', name: '불가리아어' },
+  { code: 'lt', name: '리투아니아어' },
+  { code: 'lv', name: '라트비아어' },
+  { code: 'et', name: '에스토니아어' },
+  { code: 'sl', name: '슬로베니아어' },
+  { code: 'sr', name: '세르비아어' },
+  { code: 'ca', name: '카탈로니아어' },
+  { code: 'af', name: '아프리칸스어' },
+  { code: 'sw', name: '스와힐리어' },
+  { code: 'zu', name: '줄루어' },
+  { code: 'am', name: '암하라어' },
+];
+
+const RECOMMENDED_CODES = new Set(RECOMMENDED_LANGS.map(l => l.code));
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+window.onload = () => {
+  loadSavedKeys();
+  updateBadges();
+  state.allLangs = [...RECOMMENDED_LANGS];
+  renderLangList();
+  // 추천 언어 기본 선택
+  RECOMMENDED_LANGS.forEach(l => state.selectedLangs.add(l.code));
+  updateSelectedCount();
+};
+
+function loadSavedKeys() {
+  const gk = localStorage.getItem('yt_localizer_gemini_key');
+  const ck = localStorage.getItem('yt_localizer_client_id');
+  const at = localStorage.getItem('yt_localizer_access_token');
+  const te = localStorage.getItem('yt_localizer_token_expiry');
+
+  if (gk) { state.geminiKey = gk; document.getElementById('gemini-key').value = gk; }
+  if (ck) { state.youtubeClientId = ck; document.getElementById('youtube-client-id').value = ck; }
+  if (at && te && Date.now() < parseInt(te)) {
+    state.accessToken = at;
+    state.tokenExpiry = te;
+    document.getElementById('login-status').innerHTML =
+      '<span style="color:var(--accent3);">✓ 로그인 완료</span>';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  STEP NAVIGATION
+// ═══════════════════════════════════════════
+function goToStep(n) {
+  // 유효성 체크
+  if (n > 0 && !state.geminiKey) { showToast('Gemini API Key를 먼저 입력해주세요.', 'error'); goToStep(0); return; }
+  if (n > 0 && !state.youtubeClientId) { showToast('YouTube Client ID를 먼저 입력해주세요.', 'error'); goToStep(0); return; }
+  if (n > 1 && !state.selectedVideo) { showToast('영상을 먼저 선택해주세요.', 'error'); return; }
+  if (n > 2 && state.selectedLangs.size === 0) { showToast('언어를 하나 이상 선택해주세요.', 'error'); return; }
+
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step-${n}`).classList.add('active');
+  state.currentStep = n;
+  updateStepNav(n);
+  window.scrollTo(0, 0);
+
+  // 스텝별 초기화
+  if (n === 1 && state.videoList.length === 0) loadVideoList();
+  if (n === 2) renderSelectedVideoSummary();
+  if (n === 3) populateSourceFields();
+  if (n === 4) renderRegisterSummary();
+}
+
+function updateStepNav(n) {
+  const items = document.querySelectorAll('.step-nav-item');
+  items.forEach((item, i) => {
+    item.classList.remove('current', 'done');
+    if (i === n) item.classList.add('current');
+    else if (i < n) item.classList.add('done');
+  });
+}
+
+// ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+function saveSettingsAndNext() {
+  const gk = document.getElementById('gemini-key').value.trim();
+  const ck = document.getElementById('youtube-client-id').value.trim();
+
+  if (!gk) { showToast('Gemini API Key를 입력해주세요.', 'error'); return; }
+  if (!ck) { showToast('YouTube OAuth Client ID를 입력해주세요.', 'error'); return; }
+
+  state.geminiKey = gk;
+  state.youtubeClientId = ck;
+  localStorage.setItem('yt_localizer_gemini_key', gk);
+  localStorage.setItem('yt_localizer_client_id', ck);
+
+  if (!state.accessToken) {
+    showToast('YouTube 로그인이 필요해요.', 'error');
+    return;
+  }
+
+  showToast('설정 저장 완료!', 'success');
+  updateBadges();
+  goToStep(1);
+}
+
+function updateBadges() {
+  const gb = document.getElementById('badge-gemini');
+  const yb = document.getElementById('badge-youtube');
+  if (state.geminiKey) gb.classList.add('active'); else gb.classList.remove('active');
+  if (state.accessToken) yb.classList.add('active'); else yb.classList.remove('active');
+}
+
+// ═══════════════════════════════════════════
+//  GOOGLE OAUTH
+// ═══════════════════════════════════════════
+function handleGoogleLogin() {
+  const clientId = document.getElementById('youtube-client-id').value.trim();
+  if (!clientId) { showToast('YouTube Client ID를 먼저 입력해주세요.', 'error'); return; }
+
+  const scope = [
+    'https://www.googleapis.com/auth/youtube',
+    'https://www.googleapis.com/auth/youtube.force-ssl'
+  ].join(' ');
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: window.location.origin + window.location.pathname,
+    response_type: 'token',
+    scope: scope,
+    include_granted_scopes: 'true',
+    prompt: 'consent'
+  });
+
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+// OAuth 콜백 처리 (페이지 로드 시)
+(function handleOAuthCallback() {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token')) return;
+
+  const params = new URLSearchParams(hash.substring(1));
+  const token = params.get('access_token');
+  const expiresIn = params.get('expires_in');
+
+  if (token) {
+    state.accessToken = token;
+    state.tokenExpiry = Date.now() + parseInt(expiresIn) * 1000;
+    localStorage.setItem('yt_localizer_access_token', token);
+    localStorage.setItem('yt_localizer_token_expiry', state.tokenExpiry);
+
+    // URL 클린업
+    history.replaceState(null, '', window.location.pathname);
+
+    document.getElementById('login-status').innerHTML =
+      '<span style="color:var(--accent3);">✓ 로그인 완료! 이제 저장하고 시작할 수 있어요.</span>';
+    updateBadges();
+    showToast('YouTube 로그인 성공!', 'success');
+  }
+})();
+
+// ═══════════════════════════════════════════
+//  VIDEO LIST
+// ═══════════════════════════════════════════
+async function loadVideoList(pageToken = null) {
+  const wrap = document.getElementById('video-list-wrap');
+  if (!pageToken) {
+    wrap.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div><div class="empty-title" style="margin-top:16px;">영상 불러오는 중...</div></div>`;
+    state.videoList = [];
+    state.nextPageToken = null;
+  }
+
+  try {
+    // 1. 채널의 업로드 플레이리스트 ID 가져오기
+    const channelRes = await ytApiGet('channels', {
+      part: 'contentDetails',
+      mine: true
+    });
+    const uploadsId = channelRes.items[0].contentDetails.relatedPlaylists.uploads;
+
+    // 2. 업로드 목록 가져오기
+    const params = {
+      part: 'snippet',
+      playlistId: uploadsId,
+      maxResults: 20
+    };
+    if (pageToken) params.pageToken = pageToken;
+
+    const listRes = await ytApiGet('playlistItems', params);
+    const videoIds = listRes.items.map(i => i.snippet.resourceId.videoId).join(',');
+
+    // 3. 상태 정보 가져오기 (비공개/예약 등)
+    const videoRes = await ytApiGet('videos', {
+      part: 'snippet,status',
+      id: videoIds
+    });
+
+    const videos = videoRes.items.map(v => ({
+      id: v.id,
+      title: v.snippet.title,
+      description: v.snippet.description,
+      thumbnail: v.snippet.thumbnails?.medium?.url || v.snippet.thumbnails?.default?.url || '',
+      publishedAt: v.snippet.publishedAt,
+      privacyStatus: v.status.privacyStatus,
+      publishAt: v.status.publishAt || null
+    }));
+
+    state.videoList = [...state.videoList, ...videos];
+    state.filteredVideos = [...state.videoList];
+    state.nextPageToken = listRes.nextPageToken || null;
+
+    renderVideoList();
+    document.getElementById('load-more-wrap').style.display = state.nextPageToken ? 'block' : 'none';
+
+  } catch (e) {
+    wrap.innerHTML = `<div class="alert alert-error">영상 목록 로딩 실패: ${e.message}<br><button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="loadVideoList()">재시도</button></div>`;
+  }
+}
+
+function loadMoreVideos() {
+  if (state.nextPageToken) loadVideoList(state.nextPageToken);
+}
+
+function filterVideos() {
+  const q = document.getElementById('video-search').value.toLowerCase();
+  state.filteredVideos = state.videoList.filter(v => v.title.toLowerCase().includes(q));
+  renderVideoList();
+}
+
+function renderVideoList() {
+  const wrap = document.getElementById('video-list-wrap');
+  if (state.filteredVideos.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">영상이 없어요</div><div class="empty-desc">검색어를 바꿔보거나 새로고침해보세요.</div></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="video-grid">${state.filteredVideos.map(v => `
+    <div class="video-item ${state.selectedVideo?.id === v.id ? 'selected' : ''}"
+         onclick="selectVideo('${v.id}')">
+      <img class="video-thumb" src="${v.thumbnail}" alt="" onerror="this.style.background='var(--surface2)'">
+      <div class="video-info">
+        <div class="video-title">${escHtml(v.title)}</div>
+        <div class="video-meta">
+          <span class="privacy-badge ${getPrivacyClass(v.privacyStatus)}">${getPrivacyLabel(v)}</span>
+          <span>${formatDate(v.publishedAt)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function selectVideo(id) {
+  state.selectedVideo = state.videoList.find(v => v.id === id);
+  renderVideoList();
+  document.getElementById('btn-next-2').disabled = false;
+  showToast(`"${state.selectedVideo.title.slice(0,20)}..." 선택됨`, 'success');
+}
+
+function getPrivacyClass(status) {
+  const map = { public: 'privacy-public', private: 'privacy-private', unlisted: 'privacy-unlisted' };
+  return map[status] || 'privacy-scheduled';
+}
+
+function getPrivacyLabel(v) {
+  if (v.publishAt) return '📅 예약';
+  const map = { public: '🟢 공개', private: '🔴 비공개', unlisted: '🟡 미등록' };
+  return map[v.privacyStatus] || v.privacyStatus;
+}
+
+// ═══════════════════════════════════════════
+//  LANGUAGE LIST
+// ═══════════════════════════════════════════
+function renderLangList() {
+  const wrap = document.getElementById('lang-list-wrap');
+  const recommended = state.allLangs.filter(l => RECOMMENDED_CODES.has(l.code));
+  const others = state.allLangs.filter(l => !RECOMMENDED_CODES.has(l.code));
+
+  wrap.innerHTML = `
+    <div class="lang-section">
+      <div class="lang-section-title">
+        <span>⭐ 추천 언어 <span class="count-badge" style="background:var(--accent);">${recommended.length}</span></span>
+        <span style="font-size:10px; color:var(--text3);">기본 선택됨</span>
+      </div>
+      <div class="lang-grid">
+        ${recommended.map(l => renderLangCheckbox(l)).join('')}
+      </div>
+    </div>
+    ${others.length > 0 ? `
+    <div class="lang-section">
+      <div class="lang-section-title">
+        <span>추가 언어 <span class="count-badge" style="background:var(--surface2); color:var(--text2);">${others.length}</span></span>
+      </div>
+      <div class="lang-grid">
+        ${others.map(l => renderLangCheckbox(l)).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function renderLangCheckbox(l) {
+  const checked = state.selectedLangs.has(l.code);
+  return `
+    <label class="lang-checkbox ${checked ? 'checked' : ''}" id="lang-cb-${l.code}">
+      <input type="checkbox" ${checked ? 'checked' : ''}
+             onchange="toggleLang('${l.code}', this.checked)">
+      <span class="lang-name">${l.name}</span>
+      <span class="lang-code">${l.code}</span>
+    </label>`;
+}
+
+function toggleLang(code, checked) {
+  if (checked) state.selectedLangs.add(code);
+  else state.selectedLangs.delete(code);
+  const cb = document.getElementById(`lang-cb-${code}`);
+  if (cb) cb.classList.toggle('checked', checked);
+  updateSelectedCount();
+}
+
+function selectAllLangs() {
+  state.allLangs.forEach(l => { state.selectedLangs.add(l.code); });
+  document.querySelectorAll('.lang-checkbox input').forEach(i => i.checked = true);
+  document.querySelectorAll('.lang-checkbox').forEach(el => el.classList.add('checked'));
+  updateSelectedCount();
+}
+
+function deselectAllLangs() {
+  state.selectedLangs.clear();
+  document.querySelectorAll('.lang-checkbox input').forEach(i => i.checked = false);
+  document.querySelectorAll('.lang-checkbox').forEach(el => el.classList.remove('checked'));
+  updateSelectedCount();
+}
+
+function selectRecommended() {
+  state.selectedLangs.clear();
+  RECOMMENDED_LANGS.forEach(l => state.selectedLangs.add(l.code));
+  state.allLangs.forEach(l => {
+    const el = document.getElementById(`lang-cb-${l.code}`);
+    const inp = el?.querySelector('input');
+    const isRec = RECOMMENDED_CODES.has(l.code);
+    if (inp) inp.checked = isRec;
+    if (el) el.classList.toggle('checked', isRec);
+  });
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  document.getElementById('selected-count').textContent = state.selectedLangs.size;
+}
+
+function renderSelectedVideoSummary() {
+  const box = document.getElementById('selected-video-summary');
+  if (!state.selectedVideo) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="summary-row">
+      <span class="summary-key">선택 영상</span>
+      <span class="summary-val">${escHtml(state.selectedVideo.title)}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-key">상태</span>
+      <span class="summary-val">${getPrivacyLabel(state.selectedVideo)}</span>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  TRANSLATION
+// ═══════════════════════════════════════════
+function populateSourceFields() {
+  if (!state.selectedVideo) return;
+  document.getElementById('source-title').value = state.selectedVideo.title;
+  document.getElementById('source-desc').value = state.selectedVideo.description;
+  updateSourceCharCount();
+}
+
+function updateSourceCharCount() {
+  const len = document.getElementById('source-title').value.length;
+  const el = document.getElementById('source-title-count');
+  el.textContent = `${len} / 100`;
+  el.className = `char-count ${len > 100 ? 'over' : 'ok'}`;
+}
+
+async function startTranslation() {
+  const title = document.getElementById('source-title').value.trim();
+  const desc = document.getElementById('source-desc').value.trim();
+
+  if (!title) { showToast('제목을 입력해주세요.', 'error'); return; }
+  if (state.selectedLangs.size === 0) { showToast('언어를 선택해주세요.', 'error'); return; }
+
+  const langs = [...state.selectedLangs].map(code => {
+    const found = state.allLangs.find(l => l.code === code);
+    return found || { code, name: code };
+  });
+
+  const btn = document.getElementById('btn-translate');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> 번역 중...';
+
+  document.getElementById('translate-progress-wrap').style.display = 'block';
+  document.getElementById('translate-progress-bar').style.width = '0%';
+  document.getElementById('translate-progress-text').textContent = `0 / ${langs.length}`;
+
+  state.translations = {};
+
+  // 청크 단위로 번역 (한 번에 15개 언어씩)
+  const chunkSize = 15;
+  let done = 0;
+
+  for (let i = 0; i < langs.length; i += chunkSize) {
+    const chunk = langs.slice(i, i + chunkSize);
+    try {
+      const result = await translateChunk(title, desc, chunk);
+      Object.assign(state.translations, result);
+    } catch (e) {
+      console.error('번역 오류:', e);
+      chunk.forEach(l => {
+        state.translations[l.code] = { title: `[번역 실패] ${l.name}`, description: desc, error: true };
+      });
+    }
+    done += chunk.length;
+    const pct = Math.round((done / langs.length) * 100);
+    document.getElementById('translate-progress-bar').style.width = `${pct}%`;
+    document.getElementById('translate-progress-text').textContent = `${done} / ${langs.length} 언어 완료`;
+  }
+
+  renderTranslationResults(langs);
+  btn.disabled = false;
+  btn.innerHTML = '🔄 전체 재번역';
+  document.getElementById('btn-next-4').disabled = false;
+  showToast(`${langs.length}개 언어 번역 완료!`, 'success');
+}
+
+async function translateChunk(title, desc, langs) {
+  const langList = langs.map(l => `- ${l.name} (${l.code})`).join('\n');
+
+  const prompt = `You are a professional translator specializing in YouTube music channel metadata.
+Translate the following YouTube video title and description into the specified languages.
+
+STRICT RULES:
+1. Title must be 100 characters or fewer in the target language. If it exceeds 100 chars, shorten it naturally while preserving the core meaning.
+2. Preserve ALL line breaks in the description exactly as in the original.
+3. Keep the overall tone and nuance appropriate for a music playlist channel targeting 20-40 year olds.
+4. Return ONLY valid JSON, no markdown, no explanation.
+5. Korean SEO keywords in descriptions should be translated to equivalent SEO terms in the target language.
+
+ORIGINAL TITLE: ${title}
+
+ORIGINAL DESCRIPTION:
+${desc}
+
+TARGET LANGUAGES:
+${langList}
+
+Return JSON in this exact format:
+{
+  "translations": {
+    "LANG_CODE": {
+      "title": "translated title here",
+      "description": "translated description here"
+    }
+  }
+}`;
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.geminiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
+    })
+  });
+
+  if (!res.ok) throw new Error(`Gemini API 오류: ${res.status}`);
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  // JSON 파싱
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('JSON 파싱 실패');
+
+  const parsed = JSON.parse(jsonMatch[0]);
+  return parsed.translations || {};
+}
+
+async function retranslateLang(code) {
+  const langInfo = state.allLangs.find(l => l.code === code) || { code, name: code };
+  const title = document.getElementById('source-title').value.trim();
+  const desc = document.getElementById('source-desc').value.trim();
+
+  const btn = document.querySelector(`[data-retranslate="${code}"]`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:1.5px;"></div>'; }
+
+  try {
+    const result = await translateChunk(title, desc, [langInfo]);
+    if (result[code]) {
+      state.translations[code] = result[code];
+      updateTranslationItem(code);
+      showToast(`${langInfo.name} 재번역 완료`, 'success');
+    }
+  } catch (e) {
+    showToast(`${langInfo.name} 재번역 실패`, 'error');
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '🔄 재번역'; }
+}
+
+function renderTranslationResults(langs) {
+  const wrap = document.getElementById('translation-results');
+  wrap.innerHTML = `<div class="translation-list">
+    ${langs.map(l => renderTranslationItem(l)).join('')}
+  </div>`;
+}
+
+function renderTranslationItem(l) {
+  const t = state.translations[l.code];
+  const hasError = t?.error;
+  const statusClass = hasError ? 'error' : 'done';
+  const statusIcon = hasError ? '✗' : '✓';
+
+  return `<div class="translation-item" id="trans-item-${l.code}">
+    <div class="translation-header" onclick="toggleTranslation('${l.code}')">
+      <div class="trans-status ${statusClass}">${statusIcon}</div>
+      <div class="translation-lang">${l.name}</div>
+      <div class="translation-code">${l.code}</div>
+      <div class="translation-title-preview">${escHtml(t?.title || '')}</div>
+      <div class="translation-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" data-retranslate="${l.code}"
+                onclick="retranslateLang('${l.code}')">🔄 재번역</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyTranslation('${l.code}')">📋 복사</button>
+      </div>
+      <span class="chevron" id="chev-${l.code}">▼</span>
+    </div>
+    <div class="translation-body" id="trans-body-${l.code}">
+      <div class="translation-field">
+        <div class="translation-field-label">제목</div>
+        <input type="text" id="trans-title-${l.code}" value="${escAttr(t?.title || '')}"
+               maxlength="200" oninput="updateTransState('${l.code}')">
+        <div class="char-count ok" id="trans-title-count-${l.code}">${(t?.title||'').length} / 100</div>
+      </div>
+      <div class="translation-field">
+        <div class="translation-field-label">설명글</div>
+        <textarea id="trans-desc-${l.code}" rows="5"
+                  oninput="updateTransState('${l.code}')">${escHtml(t?.description || '')}</textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateTranslationItem(code) {
+  const item = document.getElementById(`trans-item-${code}`);
+  if (!item) return;
+  const t = state.translations[code];
+  const titleInput = document.getElementById(`trans-title-${code}`);
+  const descInput = document.getElementById(`trans-desc-${code}`);
+  const preview = item.querySelector('.translation-title-preview');
+  const status = item.querySelector('.trans-status');
+
+  if (titleInput) titleInput.value = t?.title || '';
+  if (descInput) descInput.value = t?.description || '';
+  if (preview) preview.textContent = t?.title || '';
+  if (status) {
+    status.className = `trans-status ${t?.error ? 'error' : 'done'}`;
+    status.textContent = t?.error ? '✗' : '✓';
+  }
+  updateTransTitleCount(code);
+}
+
+function updateTransState(code) {
+  state.translations[code] = {
+    title: document.getElementById(`trans-title-${code}`)?.value || '',
+    description: document.getElementById(`trans-desc-${code}`)?.value || ''
+  };
+  updateTransTitleCount(code);
+}
+
+function updateTransTitleCount(code) {
+  const el = document.getElementById(`trans-title-count-${code}`);
+  const len = (state.translations[code]?.title || '').length;
+  if (el) {
+    el.textContent = `${len} / 100`;
+    el.className = `char-count ${len > 100 ? 'over' : 'ok'}`;
+  }
+}
+
+function toggleTranslation(code) {
+  const body = document.getElementById(`trans-body-${code}`);
+  const chev = document.getElementById(`chev-${code}`);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', isOpen);
+}
+
+function copyTranslation(code) {
+  const t = state.translations[code];
+  if (!t) return;
+  const text = `[제목]\n${t.title}\n\n[설명글]\n${t.description}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const lang = state.allLangs.find(l => l.code === code);
+    showToast(`${lang?.name || code} 복사 완료!`, 'success');
+  });
+}
+
+// ═══════════════════════════════════════════
+//  REGISTER
+// ═══════════════════════════════════════════
+function renderRegisterSummary() {
+  const box = document.getElementById('register-summary');
+  const langCount = Object.keys(state.translations).length;
+  box.innerHTML = `
+    <div class="summary-row">
+      <span class="summary-key">영상</span>
+      <span class="summary-val">${escHtml(state.selectedVideo?.title || '')}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-key">Video ID</span>
+      <span class="summary-val" style="font-family:'DM Mono',monospace; font-size:12px;">${state.selectedVideo?.id || ''}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-key">언어 수</span>
+      <span class="summary-val"><span class="count-badge">${langCount}</span> 개 언어</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-key">API 호출</span>
+      <span class="summary-val" style="color:var(--accent3);">단 1회 (50 유닛 소비)</span>
+    </div>`;
+}
+
+function confirmRegister() {
+  showModal(
+    '자동 등록 확인',
+    `선택한 영상에 ${Object.keys(state.translations).length}개 언어의 제목/설명을 등록해요.\n기존 번역이 있으면 덮어써요. 계속할까요?`,
+    registerAll
+  );
+}
+
+async function registerAll() {
+  closeModal();
+  const btn = document.getElementById('btn-register');
+  btn.disabled = true;
+
+  const progressWrap = document.getElementById('register-progress');
+  const progressBar = document.getElementById('register-progress-bar');
+  const progressText = document.getElementById('register-progress-text');
+  progressWrap.style.display = 'block';
+  progressBar.style.width = '30%';
+  progressText.textContent = 'YouTube API에 전송 중...';
+
+  try {
+    // localizations 객체 빌드
+    const localizations = {};
+    for (const [code, t] of Object.entries(state.translations)) {
+      if (!t.error && t.title) {
+        localizations[code] = {
+          title: t.title.slice(0, 100), // 100자 강제 제한
+          description: t.description || ''
+        };
+      }
+    }
+
+    // videos.update 단 1회 호출
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=localizations,snippet`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${state.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: state.selectedVideo.id,
+        localizations: localizations,
+        snippet: {
+          title: state.selectedVideo.title,
+          description: state.selectedVideo.description,
+          categoryId: '10', // Music
+          defaultLanguage: 'en'
+        }
+      })
+    });
+
+    progressBar.style.width = '100%';
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    progressText.textContent = '등록 완료!';
+
+    const resultEl = document.getElementById('register-result');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div class="alert alert-success">
+        <span>✅</span>
+        <div>
+          <strong>${Object.keys(localizations).length}개 언어 등록 완료!</strong><br>
+          <span style="font-size:12px; margin-top:4px; display:block;">YouTube Studio → 언어 탭에서 확인할 수 있어요. 반영까지 몇 분 걸릴 수 있어요.</span>
+        </div>
+      </div>`;
+
+    document.getElementById('register-done-actions').style.display = 'block';
+    showToast('자동 등록 완료! 🎉', 'success');
+
+  } catch (e) {
+    progressBar.style.width = '100%';
+    progressBar.style.background = 'var(--error)';
+    progressText.textContent = '등록 실패';
+
+    const resultEl = document.getElementById('register-result');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div class="alert alert-error">
+        <span>❌</span>
+        <div>
+          <strong>등록 실패</strong><br>
+          <span style="font-size:12px;">${e.message}</span><br>
+          <button class="btn btn-danger btn-sm" style="margin-top:12px;" onclick="registerAll()">재시도</button>
+        </div>
+      </div>`;
+
+    showToast(`등록 실패: ${e.message}`, 'error');
+    btn.disabled = false;
+  }
+}
+
+function restartFlow() {
+  state.selectedVideo = null;
+  state.translations = {};
+  document.getElementById('register-result').style.display = 'none';
+  document.getElementById('register-progress').style.display = 'none';
+  document.getElementById('register-done-actions').style.display = 'none';
+  document.getElementById('btn-register').disabled = false;
+  document.getElementById('btn-next-4').disabled = true;
+  goToStep(1);
+}
+
+// ═══════════════════════════════════════════
+//  YOUTUBE API HELPER
+// ═══════════════════════════════════════════
+async function ytApiGet(endpoint, params) {
+  const url = new URL(`https://www.googleapis.com/youtube/v3/${endpoint}`);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${state.accessToken}` }
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    if (res.status === 401) {
+      state.accessToken = null;
+      localStorage.removeItem('yt_localizer_access_token');
+      showToast('로그인이 만료됐어요. 다시 로그인해주세요.', 'error');
+      goToStep(0);
+    }
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════
+function showModal(title, desc, onConfirm) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-desc').textContent = desc;
+  document.getElementById('modal-confirm-btn').onclick = onConfirm;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${type === 'success' ? '✓' : '✗'}</span> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+</script>
+</body>
+</html>
