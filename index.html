@@ -1238,6 +1238,7 @@ const RECOMMENDED_LANGS = [
   { code: 'nl', name: '네덜란드어' },
   { code: 'pl', name: '폴란드어' },
   { code: 'sv', name: '스웨덴어' },
+  { code: 'mn', name: '몽골어' },
   // Tier 3 — 확장
   { code: 'cs', name: '체코어' },
   { code: 'da', name: '덴마크어' },
@@ -1777,7 +1778,10 @@ async function startTranslation() {
     if (chunkError) {
       stopped = true;
       progressBar.style.background = 'var(--error)';
-      progressText.textContent = `❌ 번역 중단 (${done}/${langs.length} 완료) — ${chunkError.message}`;
+      progressText.textContent = `❌ 번역 중단 (${done}/${langs.length} 완료)`;
+
+      // 콘솔 로그
+      console.error('[YT Localizer] 번역 오류:', chunkError);
 
       // 완료된 부분만 결과 렌더링
       const doneLangs = langs.slice(0, done);
@@ -1786,20 +1790,34 @@ async function startTranslation() {
         document.getElementById('btn-next-4').disabled = false;
       }
 
-      // 에러 알림
+      // 에러 상세 박스
+      const failedLangNames = chunk.map(l => l.name).join(', ');
+      const errMsg = chunkError.message || String(chunkError);
       const resultWrap = document.getElementById('translation-results');
+
+      // 기존 에러 박스 제거 후 새로 삽입
+      document.querySelectorAll('.debug-error-box').forEach(el => el.remove());
+
       resultWrap.insertAdjacentHTML('beforebegin', `
-        <div class="alert alert-error" style="margin-bottom:16px;">
-          <span>❌</span>
-          <div>
-            <strong>번역 중단됨</strong> — ${chunkError.message}<br>
-            <span style="font-size:13px;">${done}개 언어만 완료됐어요. 실패 언어는 개별 [재번역] 버튼으로 다시 시도하세요.</span>
+        <div class="alert alert-error debug-error-box" style="margin-bottom:16px; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>❌</span>
+            <strong>번역 중단 — ${done}/${langs.length}개 완료</strong>
+          </div>
+          <div style="font-size:13px;">
+            <b>실패 언어:</b> ${failedLangNames}
+          </div>
+          <div style="font-size:12px; background:rgba(0,0,0,0.3); border-radius:6px; padding:10px; font-family:'DM Mono',monospace; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto; line-height:1.6;">
+${escHtml(errMsg)}
+          </div>
+          <div style="font-size:12px; color:var(--text2);">
+            실패 언어는 개별 [재번역] 버튼으로 다시 시도하세요.
           </div>
         </div>`);
 
       btn.disabled = false;
       btn.innerHTML = '🔄 전체 재번역';
-      showToast(`번역 중단: ${chunkError.message}`, 'error');
+      showToast('번역 중단됨 — 에러 박스 확인', 'error');
       return;
     }
 
@@ -1824,98 +1842,132 @@ async function startTranslation() {
 async function translateChunk(title, desc, langs) {
   const langList = langs.map(l => `- ${l.name} (${l.code})`).join('\n');
 
-  // 특수문자 이스케이프 — JSON 파싱 오류 방지
-  const safeTitle = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const safeDesc = desc.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const prompt = `You are a professional translator for a Korean YouTube music playlist channel.
 
-  const prompt = `You are a professional translator specializing in YouTube music channel metadata.
-Translate the following YouTube video title and description into the specified languages.
+TRANSLATION RULES:
+1. Translate ONLY Korean text. Keep ALL English text exactly as-is (including English words, brand names, hashtags, URLs, symbols).
+2. Title: 100 characters max in target language. Shorten naturally if needed.
+3. Preserve ALL line breaks exactly as in the original.
+4. Tone: trendy, urban, suitable for 20-40 year olds.
+5. Korean hashtags (#카페BGM etc): translate the Korean part only, keep # symbol and English words as-is.
+6. Return ONLY raw JSON, no markdown code blocks, no explanation.
 
-STRICT RULES:
-1. Title must be 100 characters or fewer in the target language. If it exceeds 100 chars, shorten it naturally while preserving the core meaning.
-2. Preserve ALL line breaks (\\n) in the description exactly as in the original.
-3. Keep the overall tone and nuance appropriate for a music playlist channel targeting 20-40 year olds.
-4. Return ONLY a valid JSON object. No markdown fences, no explanation, no extra text.
-5. All string values in JSON must properly escape special characters: use \\" for quotes, \\\\ for backslash.
-6. Korean SEO keywords in descriptions should be translated to equivalent SEO terms in the target language.
-7. IMPORTANT: Never use unescaped double quotes inside JSON string values.
-
-ORIGINAL TITLE: ${safeTitle}
+ORIGINAL TITLE:
+${title}
 
 ORIGINAL DESCRIPTION:
-${safeDesc}
+${desc}
 
 TARGET LANGUAGES:
 ${langList}
 
-Return ONLY this JSON structure (no other text):
-{
-  "translations": {
-    "LANG_CODE": {
-      "title": "translated title",
-      "description": "translated description"
+OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
+{"translations":{"LANG_CODE":{"title":"...","description":"..."}}}`;
+
+  const reqBody = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 16384
     }
-  }
-}`;
+  };
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 8192,
-        responseMimeType: 'application/json'
-      }
-    })
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini API 오류: ${res.status} ${errText.includes('429') ? '429' : ''}`);
-  }
-
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-  // JSON 파싱 — 여러 방어 레이어
-  let parsed = null;
-
-  // 1차: 직접 파싱
+  let rawText = '';
   try {
-    parsed = JSON.parse(text);
-  } catch (_) {}
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody) }
+    );
 
-  // 2차: 코드블럭 제거 후 파싱
+    if (!res.ok) {
+      const errBody = await res.text();
+      const is429 = res.status === 429 || errBody.includes('429') || errBody.includes('RESOURCE_EXHAUSTED');
+      throw new Error(`Gemini API ${res.status}${is429 ? ' 429' : ''}: ${errBody.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+
+    // finish_reason 체크
+    const candidate = data.candidates?.[0];
+    if (!candidate) throw new Error(`응답 없음: ${JSON.stringify(data).slice(0,300)}`);
+    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+      throw new Error(`생성 중단 (${candidate.finishReason}): 토큰 한도 초과 가능성`);
+    }
+
+    rawText = candidate.content?.parts?.[0]?.text || '';
+    if (!rawText) throw new Error('빈 응답 반환됨');
+
+  } catch (e) {
+    // fetch 자체 오류 (네트워크 등)
+    throw e;
+  }
+
+  // JSON 파싱 — 5단계 방어
+  let parsed = null;
+  const attempts = [];
+
+  // 1차: 직접
+  try { parsed = JSON.parse(rawText); attempts.push('직접파싱 성공'); }
+  catch (e1) { attempts.push(`직접파싱 실패: ${e1.message}`); }
+
+  // 2차: 마크다운 코드블럭 제거
   if (!parsed) {
     try {
-      const clean = text.replace(/^```[\w]*\n?/,'').replace(/```$/,'').trim();
+      const clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       parsed = JSON.parse(clean);
-    } catch (_) {}
+      attempts.push('코드블럭제거 성공');
+    } catch (e2) { attempts.push(`코드블럭제거 실패: ${e2.message}`); }
   }
 
-  // 3차: 중괄호 범위 추출 후 파싱
+  // 3차: 첫 { 부터 마지막 } 까지 추출
   if (!parsed) {
     try {
-      const match = text.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-    } catch (_) {}
+      const start = rawText.indexOf('{');
+      const end = rawText.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+        parsed = JSON.parse(rawText.slice(start, end + 1));
+        attempts.push('범위추출 성공');
+      }
+    } catch (e3) { attempts.push(`범위추출 실패: ${e3.message}`); }
   }
 
-  // 4차: 깨진 JSON 복구 시도 (trailing comma 등)
+  // 4차: 제어문자 제거
   if (!parsed) {
     try {
-      const fixed = text
-        .replace(/,\s*}/g, '}')
-        .replace(/,\s*]/g, ']')
-        .replace(/[\x00-\x1F\x7F]/g, ' ');
-      const match = fixed.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-    } catch (_) {}
+      const sanitized = rawText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      const start = sanitized.indexOf('{');
+      const end = sanitized.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+        parsed = JSON.parse(sanitized.slice(start, end + 1));
+        attempts.push('제어문자제거 성공');
+      }
+    } catch (e4) { attempts.push(`제어문자제거 실패: ${e4.message}`); }
   }
 
-  if (!parsed) throw new Error('JSON 파싱 실패');
+  // 5차: trailing comma 수정
+  if (!parsed) {
+    try {
+      const fixed = rawText
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+      const start = fixed.indexOf('{');
+      const end = fixed.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+        parsed = JSON.parse(fixed.slice(start, end + 1));
+        attempts.push('trailing-comma수정 성공');
+      }
+    } catch (e5) { attempts.push(`trailing-comma수정 실패: ${e5.message}`); }
+  }
+
+  if (!parsed) {
+    const preview = rawText.slice(0, 500);
+    throw new Error(
+      `JSON 파싱 실패\n` +
+      `시도 내역: ${attempts.join(' | ')}\n` +
+      `응답 앞부분(500자): ${preview}`
+    );
+  }
+
   return parsed.translations || {};
 }
 
