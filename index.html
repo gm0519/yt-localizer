@@ -1855,8 +1855,8 @@ TRANSLATION RULES:
 ORIGINAL TITLE:
 ${title}
 
-ORIGINAL DESCRIPTION:
-${desc}
+ORIGINAL DESCRIPTION (preserve line breaks as \\n in JSON):
+${desc.replace(/\n/g, '\\n')}
 
 TARGET LANGUAGES:
 ${langList}
@@ -1919,16 +1919,27 @@ OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
     } catch (e2) { attempts.push(`코드블럭제거 실패: ${e2.message}`); }
   }
 
-  // 3차: 첫 { 부터 마지막 } 까지 추출
+  // 3차: 중괄호 depth 추적으로 정확한 JSON 범위 추출
   if (!parsed) {
     try {
       const start = rawText.indexOf('{');
-      const end = rawText.lastIndexOf('}');
-      if (start !== -1 && end !== -1) {
-        parsed = JSON.parse(rawText.slice(start, end + 1));
-        attempts.push('범위추출 성공');
+      if (start !== -1) {
+        let depth = 0, inStr = false, escape = false, end = -1;
+        for (let i = start; i < rawText.length; i++) {
+          const c = rawText[i];
+          if (escape) { escape = false; continue; }
+          if (c === '\\') { escape = true; continue; }
+          if (c === '"') { inStr = !inStr; continue; }
+          if (inStr) continue;
+          if (c === '{') depth++;
+          else if (c === '}') { depth--; if (depth === 0) { end = i; break; } }
+        }
+        if (end !== -1) {
+          parsed = JSON.parse(rawText.slice(start, end + 1));
+          attempts.push('depth추적 성공');
+        }
       }
-    } catch (e3) { attempts.push(`범위추출 실패: ${e3.message}`); }
+    } catch (e3) { attempts.push(`depth추적 실패: ${e3.message}`); }
   }
 
   // 4차: 제어문자 제거
