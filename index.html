@@ -1049,9 +1049,25 @@
 
   <div class="btn-row">
     <button class="btn btn-secondary" onclick="goToStep(0)">← 뒤로</button>
+    <button class="btn btn-ghost btn-sm" id="btn-fix-lang" onclick="showFixLangPanel()" disabled style="margin-left:auto;">
+      🔧 언어 복구
+    </button>
     <button class="btn btn-primary" id="btn-next-2" onclick="goToStep(2)" disabled>
       언어 선택하기 →
     </button>
+  </div>
+
+  <!-- 복구 패널 -->
+  <div id="fix-lang-panel" style="display:none; margin-top:16px; padding:16px; background:var(--surface2); border:1px solid var(--warning); border-radius:12px;">
+    <div style="font-size:13px; color:var(--warning); font-weight:600; margin-bottom:8px;">🔧 제목/설명 언어 복구</div>
+    <div style="font-size:13px; color:var(--text2); margin-bottom:12px;">
+      앱이 "제목 및 설명 언어"를 영어로 바꿔버린 영상을 복구해요.<br>
+      번역 내용은 그대로 유지되고 언어 설정만 한국어(ko)로 돌아와요.
+    </div>
+    <button class="btn btn-secondary btn-sm" id="btn-do-fix" onclick="fixDefaultLanguageFromStep1()">
+      🔧 한국어(ko)로 복구 실행
+    </button>
+    <div id="fix-lang-result-step1" style="margin-top:8px; font-size:13px;"></div>
   </div>
 </section>
 
@@ -1608,6 +1624,11 @@ function selectVideo(id) {
   document.getElementById('btn-next-2').disabled = false;
   const topBtn = document.getElementById('btn-next-2-top');
   if (topBtn) topBtn.disabled = false;
+  // 복구 버튼 활성화
+  const fixBtn = document.getElementById('btn-fix-lang');
+  if (fixBtn) fixBtn.disabled = false;
+  document.getElementById('fix-lang-panel').style.display = 'none';
+  document.getElementById('fix-lang-result-step1').innerHTML = '';
   showToast(`"${state.selectedVideo.title.slice(0,20)}..." 선택됨`, 'success');
 }
 
@@ -2237,6 +2258,55 @@ async function registerAll() {
   }
 }
 
+function showFixLangPanel() {
+  const panel = document.getElementById('fix-lang-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function fixDefaultLanguageFromStep1() {
+  const btn = document.getElementById('btn-do-fix');
+  const resultEl = document.getElementById('fix-lang-result-step1');
+  if (!state.selectedVideo) { resultEl.innerHTML = '<span style="color:var(--error);">영상을 먼저 선택해주세요.</span>'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:1.5px;display:inline-block;"></div> 복구 중...';
+  resultEl.innerHTML = '';
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${state.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: state.selectedVideo.id,
+        snippet: {
+          title: state.selectedVideo.title,
+          description: state.selectedVideo.description,
+          categoryId: '10',
+          defaultLanguage: 'ko',
+          defaultAudioLanguage: 'ko'
+        }
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    resultEl.innerHTML = '<span style="color:var(--accent3);">✅ 복구 완료! YouTube Studio → 세부정보에서 확인해보세요.<br><span style="font-size:12px;">동영상 언어: 한국어 / 제목·설명 언어: 한국어로 설정됐어요.</span></span>';
+    showToast('언어 복구 완료!', 'success');
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:var(--error);">❌ 실패: ${e.message}</span>`;
+    showToast('복구 실패', 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔧 한국어(ko)로 복구 실행';
+}
+
 async function fixDefaultLanguage() {
   const btn = document.querySelector('[onclick="fixDefaultLanguage()"]');
   const resultEl = document.getElementById('fix-lang-result');
@@ -2260,7 +2330,8 @@ async function fixDefaultLanguage() {
           title: state.selectedVideo.title,
           description: state.selectedVideo.description,
           categoryId: '10',
-          defaultLanguage: 'ko'
+          defaultLanguage: 'ko',
+          defaultAudioLanguage: 'ko'
         }
       })
     });
@@ -2270,8 +2341,8 @@ async function fixDefaultLanguage() {
       throw new Error(err.error?.message || `HTTP ${res.status}`);
     }
 
-    resultEl.innerHTML = '<span style="color:var(--accent3);">✅ 복구 완료! YouTube Studio에서 확인해보세요.</span>';
-    showToast('제목/설명 언어 복구 완료!', 'success');
+    resultEl.innerHTML = '<span style="color:var(--accent3);">✅ 복구 완료! YouTube Studio에서 확인해보세요.<br><span style="font-size:12px;">동영상 언어: 한국어 / 제목·설명 언어: 한국어로 설정됐어요.</span></span>';
+    showToast('언어 복구 완료!', 'success');
   } catch(e) {
     resultEl.innerHTML = `<span style="color:var(--error);">❌ 실패: ${e.message}</span>`;
     showToast('복구 실패', 'error');
