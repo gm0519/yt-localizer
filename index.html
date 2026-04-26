@@ -417,8 +417,9 @@
   }
 
   .type-long {
-    background: rgba(124,108,252,0.1);
-    color: var(--text3);
+    background: rgba(124,108,252,0.2);
+    color: var(--text2);
+    border: 1px solid rgba(124,108,252,0.3);
   }
 
   .privacy-badge {
@@ -1704,15 +1705,23 @@ function updateSelectedCount() {
 function renderSelectedVideoSummary() {
   const box = document.getElementById('selected-video-summary');
   if (!state.selectedVideo) { box.style.display = 'none'; return; }
+  const v = state.selectedVideo;
   box.style.display = 'block';
   box.innerHTML = `
     <div class="summary-row">
       <span class="summary-key">선택 영상</span>
-      <span class="summary-val">${escHtml(state.selectedVideo.title)}</span>
+      <span class="summary-val">${escHtml(v.title)}</span>
     </div>
     <div class="summary-row">
       <span class="summary-key">상태</span>
-      <span class="summary-val">${getPrivacyLabel(state.selectedVideo)}</span>
+      <span class="summary-val" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        ${getPrivacyLabel(v)}
+        ${v.publishAt ? `<span style="color:var(--accent); font-size:13px;">📅 ${formatDateTime(v.publishAt)} 게시예정</span>` : ''}
+      </span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-key">유형</span>
+      <span class="summary-val">${getVideoTypeBadge(v)}</span>
     </div>`;
 }
 
