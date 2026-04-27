@@ -1995,7 +1995,12 @@ TRANSLATION RULES:
 5. Tone: trendy, urban, suitable for 20-40 year olds.
 6. Korean hashtags (#카페BGM etc): translate the Korean part only, keep # symbol and English words as-is.
    Example: #카페BGM → #CafeBGM (en) / #カフェBGM (ja)
-7. Return ONLY raw JSON, no markdown code blocks, no explanation.
+7. Return ONLY raw JSON. No markdown, no code blocks, no explanation, no extra text before or after.
+8. CRITICAL JSON SAFETY: All string values must be properly JSON-encoded.
+   - Never use unescaped double quotes inside string values
+   - Replace actual newlines in values with \n
+   - Special characters in non-Latin scripts (Mongolian, Arabic, Hebrew, etc.) must be included as-is (UTF-8), NOT escaped as \uXXXX unless necessary
+   - Do NOT add trailing commas
 
 ORIGINAL TITLE:
 ${title}
@@ -2006,8 +2011,8 @@ ${desc.replace(/\n/g, '\\n')}
 TARGET LANGUAGES:
 ${langList}
 
-OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
-{"translations":{"LANG_CODE":{"title":"...","description":"..."}}}`;
+OUTPUT FORMAT — return EXACTLY this structure, nothing else:
+{"translations":{"LANG_CODE":{"title":"translated title here","description":"translated description here"}}}`;
 
   const reqBody = {
     contents: [{ parts: [{ text: prompt }] }],
@@ -2088,10 +2093,13 @@ OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
     } catch (e3) { attempts.push(`depth추적 실패: ${e3.message}`); }
   }
 
-  // 4차: 제어문자 제거
+  // 4차: 제어문자 제거 + 잘못된 이스케이프 수정
   if (!parsed) {
     try {
-      const sanitized = rawText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      const sanitized = rawText
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .replace(/\\'/g, "'")           // ' → '
+        .replace(/([^\\])\\([^"\\/bfnrtu])/g, '$1$2'); // 잘못된 이스케이프 제거
       const start = sanitized.indexOf('{');
       const end = sanitized.lastIndexOf('}');
       if (start !== -1 && end !== -1) {
