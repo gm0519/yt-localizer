@@ -814,7 +814,7 @@ async function loadData() {
   // 로딩 표시
   document.getElementById('video-table-wrap').innerHTML =
     `<div class="loading-state"><div class="spinner"></div><div style="margin-top:12px;">데이터 불러오는 중...</div></div>`;
-  setMetricValues({ views:'—', impressions:'—', ctr:'—', watchtime:'—', subs:'—', likes:'—' });
+  setMetricValues({ views:'—', watchtime:'—', ctr:'—', subs:'—', likes:'—', comments:'—' });
 
   try {
     const filters = videoId ? `video==${videoId}` : undefined;
@@ -823,22 +823,21 @@ async function loadData() {
     const summary = await analyticsGet({
       ids: `channel==${state.channelId}`,
       startDate, endDate,
-      metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched,subscribersGained',
+      metrics: 'views,estimatedMinutesWatched,averageViewDuration,subscribersGained,likes,comments',
       filters
     });
 
     if (summary.rows?.[0]) {
-      const [views, imp, ctr, watch, subs] = summary.rows[0];
+      const [views, watch, avgDur, subs, likes, comments] = summary.rows[0];
       setMetricValues({
-        views:       fmtNum(views),
-        impressions: fmtNum(imp),
-        ctr:         (ctr * 100).toFixed(1) + '%',
-        watchtime:   fmtNum(Math.round(watch)),
-        subs:        (subs >= 0 ? '+' : '') + fmtNum(subs),
-        likes:       '—'
+        views:    fmtNum(views),
+        watchtime: fmtNum(Math.round(watch)),
+        ctr:      Math.round(avgDur) + '초',
+        subs:     (subs >= 0 ? '+' : '') + fmtNum(subs),
+        likes:    fmtNum(likes),
+        comments: fmtNum(comments)
       });
       document.getElementById('m-views-sub').textContent = views.toLocaleString() + '회';
-      document.getElementById('m-impressions-sub').textContent = imp.toLocaleString() + '회';
     }
 
     // 2. 시계열 (일별)
@@ -846,7 +845,7 @@ async function loadData() {
       ids: `channel==${state.channelId}`,
       startDate, endDate,
       dimensions: 'day',
-      metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched,subscribersGained',
+      metrics: 'views,estimatedMinutesWatched,averageViewDuration,subscribersGained,likes,comments',
       sort: 'day',
       filters
     });
