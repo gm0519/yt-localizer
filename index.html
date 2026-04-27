@@ -1806,10 +1806,25 @@ async function startTranslation() {
         result = await translateChunk(title, desc, chunk);
         break;
       } catch (e) {
-        if (e.message.includes('429') && retry < 2) {
-          const waitSec = (retry + 1) * 8;
+        const is429 = e.message.includes('429') || e.message.includes('RESOURCE_EXHAUSTED');
+        const is503 = e.message.includes('503') || e.message.includes('UNAVAILABLE');
+
+        if (is429) {
+          // 429는 재시도 없이 즉시 중단 — 키 교체 안내
+          chunkError = new Error(
+            '❌ Gemini API 일일 한도 초과 (429)\n' +
+            '오늘 사용 가능한 무료 요청 횟수를 모두 사용했어요.\n' +
+            '해결 방법:\n' +
+            '① 매일 오후 4시(한국시간)에 자동 리셋 — 내일 다시 시도\n' +
+            '② 다른 Gemini API Key로 교체 후 재시도\n' +
+            '   (설정 화면에서 키 변경 가능)'
+          );
+          break;
+        } else if (is503 && retry < 2) {
+          // 503은 최대 3회 재시도
+          const waitSec = (retry + 1) * 10;
           progressText.textContent =
-            `⏳ API 한도 초과 — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
+            `⏳ 서버 과부하(503) — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
           await sleep(waitSec * 1000);
         } else {
           chunkError = e;
@@ -1932,7 +1947,8 @@ OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
     if (!res.ok) {
       const errBody = await res.text();
       const is429 = res.status === 429 || errBody.includes('429') || errBody.includes('RESOURCE_EXHAUSTED');
-      throw new Error(`Gemini API ${res.status}${is429 ? ' 429' : ''}: ${errBody.slice(0, 200)}`);
+      const is503 = res.status === 503 || errBody.includes('503') || errBody.includes('UNAVAILABLE');
+      throw new Error(`Gemini API ${res.status}${is429 ? ' 429' : ''}${is503 ? ' 503' : ''}: ${errBody.slice(0, 200)}`);
     }
 
     const data = await res.json();
