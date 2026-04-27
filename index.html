@@ -1880,7 +1880,35 @@ ${escHtml(errMsg)}
       return;
     }
 
-    if (result) Object.assign(state.translations, result);
+    if (result) {
+      // 빈 번역 결과 감지 → 해당 언어만 자동 재번역 (최대 1회)
+      const emptyLangs = chunk.filter(l => {
+        const t = result[l.code];
+        return !t || !t.title || t.title.trim() === '';
+      });
+
+      if (emptyLangs.length > 0) {
+        progressText.textContent = `⚠️ ${emptyLangs.map(l=>l.name).join(', ')} 빈 결과 — 자동 재번역 중...`;
+        try {
+          await sleep(3000);
+          const retryResult = await translateChunk(title, desc, emptyLangs);
+          Object.assign(result, retryResult);
+          // 재번역 후에도 빈 결과면 error 표시
+          for (const l of emptyLangs) {
+            const t = result[l.code];
+            if (!t || !t.title || t.title.trim() === '') {
+              result[l.code] = { title: '', description: '', error: true, emptyResult: true };
+            }
+          }
+        } catch(e) {
+          for (const l of emptyLangs) {
+            result[l.code] = { title: '', description: '', error: true, emptyResult: true };
+          }
+        }
+      }
+
+      Object.assign(state.translations, result);
+    }
 
     done += chunk.length;
     const pct = Math.round((done / langs.length) * 100);
@@ -2080,15 +2108,18 @@ function renderTranslationResults(langs) {
 function renderTranslationItem(l) {
   const t = state.translations[l.code];
   const hasError = t?.error;
+  const isEmpty = t?.emptyResult;
   const statusClass = hasError ? 'error' : 'done';
-  const statusIcon = hasError ? '✗' : '✓';
+  const statusIcon = hasError ? (isEmpty ? '?' : '✗') : '✓';
 
   return `<div class="translation-item" id="trans-item-${l.code}">
     <div class="translation-header" onclick="toggleTranslation('${l.code}')">
       <div class="trans-status ${statusClass}">${statusIcon}</div>
       <div class="translation-lang">${l.name}</div>
       <div class="translation-code">${l.code}</div>
-      <div class="translation-title-preview">${escHtml(t?.title || '')}</div>
+      <div class="translation-title-preview" style="${(!t?.title && t?.error) ? 'color:var(--warning);' : ''}">
+        ${t?.emptyResult ? '⚠️ 번역 결과 없음 — 재번역 필요' : escHtml(t?.title || '')}
+      </div>
       <div class="translation-actions" onclick="event.stopPropagation()">
         <button class="btn btn-ghost btn-sm" data-retranslate="${l.code}"
                 onclick="retranslateLang('${l.code}')">🔄 재번역</button>
