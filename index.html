@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.0</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.2</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -1788,6 +1788,12 @@ async function startTranslation() {
 
   state.translations = {};
 
+  // 선택한 전체 언어를 "대기중" 상태로 미리 목록에 표시
+  langs.forEach(l => {
+    state.translations[l.code] = { title: '', description: '', pending: true };
+  });
+  renderTranslationResults(langs);
+
   // 초단위 카운트 타이머
   const startTime = Date.now();
   const timerEl = document.getElementById('translate-timer');
@@ -1879,20 +1885,17 @@ async function startTranslation() {
       // 콘솔 로그
       console.error('[YT Localizer] 번역 오류:', chunkError);
 
-      // 완료된 언어 + 실패 언어 모두 렌더링
-      const doneLangs = langs.slice(0, done);
-      const failedLangList = chunk; // 실패한 청크의 언어들
-      // 실패 언어를 error로 state에 등록
-      failedLangList.forEach(l => {
-        if (!state.translations[l.code]) {
-          state.translations[l.code] = { title: '', description: '', error: true, failed: true };
-        }
+      // 실패한 청크 → error로 표시
+      chunk.forEach(l => {
+        state.translations[l.code] = { title: '', description: '', error: true, failed: true };
+        updateTranslationItem(l.code);
       });
-      const allRenderedLangs = [...doneLangs, ...failedLangList];
-      if (allRenderedLangs.length > 0) {
-        renderTranslationResults(allRenderedLangs);
-        document.getElementById('btn-next-4').disabled = doneLangs.length === 0;
-      }
+      // 미전송 언어 → pending 유지 (이미 렌더링됨)
+      langs.slice(done + chunk.length).forEach(l => {
+        state.translations[l.code] = { title: '', description: '', pending: true, notSent: true };
+        updateTranslationItem(l.code);
+      });
+      document.getElementById('btn-next-4').disabled = done === 0;
 
       // 에러 상세 박스
       const failedLangNames = chunk.map(l => l.name).join(', ');
@@ -2138,10 +2141,12 @@ OUTPUT FORMAT — return EXACTLY this structure, nothing else:
 }
 
 async function retryFailedLangs() {
-  // 실패한 언어만 모아서 재번역
-  const failedLangs = state.allLangs.filter(l =>
-    state.translations[l.code]?.error || state.translations[l.code]?.failed
-  );
+  // 완료된 것 제외하고 전부 재시도 (실패 + 미전송 + 빈결과 + pending)
+  const failedLangs = state.allLangs.filter(l => {
+    const t = state.translations[l.code];
+    if (!t) return state.selectedLangs.has(l.code); // 선택됐지만 번역 안 된 것
+    return t.error || t.failed || t.pending || t.notSent || !t.title || t.title.trim() === '';
+  }).filter(l => state.selectedLangs.has(l.code));
   if (failedLangs.length === 0) { showToast('실패한 언어가 없어요.', 'success'); return; }
 
   const title = document.getElementById('source-title').value.trim();
@@ -2206,16 +2211,18 @@ function renderTranslationItem(l) {
   const t = state.translations[l.code];
   const hasError = t?.error;
   const isEmpty = t?.emptyResult;
-  const statusClass = hasError ? 'error' : 'done';
-  const statusIcon = hasError ? (isEmpty ? '?' : '✗') : '✓';
+  const isPending = t?.pending;
+  const isNotSent = t?.notSent;
+  const statusClass = hasError ? 'error' : isPending ? 'pending' : 'done';
+  const statusIcon = hasError ? (isEmpty ? '?' : '✗') : isPending ? (isNotSent ? '−' : '…') : '✓';
 
   return `<div class="translation-item" id="trans-item-${l.code}">
     <div class="translation-header" onclick="toggleTranslation('${l.code}')">
       <div class="trans-status ${statusClass}">${statusIcon}</div>
       <div class="translation-lang">${l.name}</div>
       <div class="translation-code">${l.code}</div>
-      <div class="translation-title-preview" style="${(!t?.title && t?.error) ? 'color:var(--warning);' : ''}">
-        ${t?.emptyResult ? '⚠️ 번역 결과 없음 — 재번역 필요' : escHtml(t?.title || '')}
+      <div class="translation-title-preview" style="${(!t?.title && t?.error) ? 'color:var(--warning);' : t?.notSent ? 'color:var(--text3);' : t?.pending ? 'color:var(--text3);' : ''}">
+        ${t?.notSent ? '— 미전송 (일괄 재번역 필요)' : t?.pending ? '⏳ 대기 중...' : t?.emptyResult ? '⚠️ 번역 결과 없음' : escHtml(t?.title || '')}
       </div>
       <div class="translation-actions" onclick="event.stopPropagation()">
         <button class="btn btn-ghost btn-sm" data-retranslate="${l.code}"
@@ -2251,10 +2258,22 @@ function updateTranslationItem(code) {
 
   if (titleInput) titleInput.value = t?.title || '';
   if (descInput) descInput.value = t?.description || '';
-  if (preview) preview.textContent = t?.title || '';
+
+  const isPending = t?.pending;
+  const isNotSent = t?.notSent;
+
+  if (preview) {
+    preview.textContent = isNotSent ? '— 미전송 (일괄 재번역 필요)'
+      : isPending ? '⏳ 대기 중...'
+      : t?.emptyResult ? '⚠️ 번역 결과 없음'
+      : t?.title || '';
+    preview.style.color = (t?.error || isNotSent) ? 'var(--warning)' : isPending ? 'var(--text3)' : '';
+  }
   if (status) {
-    status.className = `trans-status ${t?.error ? 'error' : 'done'}`;
-    status.textContent = t?.error ? '✗' : '✓';
+    const cls = t?.error ? 'error' : isPending ? 'pending' : 'done';
+    const icon = t?.error ? '✗' : isNotSent ? '−' : isPending ? '…' : '✓';
+    status.className = `trans-status ${cls}`;
+    status.textContent = icon;
   }
   updateTransTitleCount(code);
 }
