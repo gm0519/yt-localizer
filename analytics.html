@@ -6,7 +6,7 @@
 <title>YT Analytics — LAFIENA</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c6cfc'/><text x='50%25' y='54%25' font-family='Arial' font-weight='900' font-size='13' fill='white' text-anchor='middle' dominant-baseline='middle'>YT</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -497,6 +497,11 @@
     <p class="page-desc">영상별 조회수·노출수·CTR·시청시간 추이를 확인하세요.</p>
   </div>
 
+  <div class="alert alert-warning" style="margin-bottom:0;">
+    <span>ℹ️</span>
+    <div style="font-size:13px;">노출수·CTR은 YouTube Analytics API에서 지원하지 않아요. YouTube Studio에서만 확인 가능해요.</div>
+  </div>
+
   <!-- 초기 로그인 안내 -->
   <div id="auth-section">
     <div class="alert alert-info">
@@ -564,20 +569,15 @@
         <div class="metric-value" id="m-views">—</div>
         <div class="metric-sub" id="m-views-sub"></div>
       </div>
-      <div class="metric-card impressions">
-        <div class="metric-label">노출수</div>
-        <div class="metric-value" id="m-impressions">—</div>
-        <div class="metric-sub" id="m-impressions-sub"></div>
-      </div>
-      <div class="metric-card ctr">
-        <div class="metric-label">CTR</div>
-        <div class="metric-value" id="m-ctr">—</div>
-        <div class="metric-sub">클릭률</div>
-      </div>
       <div class="metric-card watchtime">
         <div class="metric-label">시청시간</div>
         <div class="metric-value" id="m-watchtime">—</div>
         <div class="metric-sub">분</div>
+      </div>
+      <div class="metric-card ctr" style="--card-color:var(--warning);">
+        <div class="metric-label">평균 시청시간</div>
+        <div class="metric-value" id="m-ctr" style="color:var(--warning);">—</div>
+        <div class="metric-sub">초 / 영상당</div>
       </div>
       <div class="metric-card subs">
         <div class="metric-label">구독자 증감</div>
@@ -589,6 +589,11 @@
         <div class="metric-value" id="m-likes">—</div>
         <div class="metric-sub">기간 내 합계</div>
       </div>
+      <div class="metric-card" style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px;">
+        <div class="metric-label">댓글</div>
+        <div class="metric-value" id="m-comments" style="color:#fc6c8f;">—</div>
+        <div class="metric-sub">기간 내 합계</div>
+      </div>
     </div>
 
     <!-- 시계열 차트 -->
@@ -597,10 +602,11 @@
         <div class="chart-title">📈 일별 추이</div>
         <div class="chart-metric-tabs">
           <button class="chart-tab active" onclick="switchChartMetric('views', this)">조회수</button>
-          <button class="chart-tab" onclick="switchChartMetric('impressions', this)">노출수</button>
-          <button class="chart-tab" onclick="switchChartMetric('ctr', this)">CTR</button>
           <button class="chart-tab" onclick="switchChartMetric('watchtime', this)">시청시간</button>
+          <button class="chart-tab" onclick="switchChartMetric('avgDuration', this)">평균시청</button>
           <button class="chart-tab" onclick="switchChartMetric('subs', this)">구독자</button>
+          <button class="chart-tab" onclick="switchChartMetric('likes', this)">좋아요</button>
+          <button class="chart-tab" onclick="switchChartMetric('comments', this)">댓글</button>
         </div>
       </div>
       <div class="chart-wrap">
@@ -646,11 +652,12 @@ const state = {
 };
 
 const METRIC_MAP = {
-  views:       { api: 'views',                     label: '조회수',   color: '#7c6cfc', unit: '' },
-  impressions: { api: 'impressions',               label: '노출수',   color: '#fc6c8f', unit: '' },
-  ctr:         { api: 'impressionClickThroughRate',label: 'CTR',     color: '#fccc6c', unit: '%' },
-  watchtime:   { api: 'estimatedMinutesWatched',   label: '시청시간', color: '#6cfcb8', unit: '분' },
-  subs:        { api: 'subscribersGained',         label: '구독자',   color: '#7cf0fc', unit: '' }
+  views:       { api: 'views',                    label: '조회수',      color: '#7c6cfc', unit: '' },
+  watchtime:   { api: 'estimatedMinutesWatched',  label: '시청시간(분)', color: '#6cfcb8', unit: '분' },
+  avgDuration: { api: 'averageViewDuration',      label: '평균시청(초)', color: '#fccc6c', unit: '초' },
+  subs:        { api: 'subscribersGained',        label: '구독자증감',  color: '#7cf0fc', unit: '' },
+  likes:       { api: 'likes',                    label: '좋아요',      color: '#fc7cf0', unit: '' },
+  comments:    { api: 'comments',                 label: '댓글',        color: '#fc6c8f', unit: '' }
 };
 
 // ═══════════════════════════════════════
@@ -816,19 +823,19 @@ async function loadData() {
     const summary = await analyticsGet({
       ids: `channel==${state.channelId}`,
       startDate, endDate,
-      metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched,subscribersGained,likes',
+      metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched,subscribersGained',
       filters
     });
 
     if (summary.rows?.[0]) {
-      const [views, imp, ctr, watch, subs, likes] = summary.rows[0];
+      const [views, imp, ctr, watch, subs] = summary.rows[0];
       setMetricValues({
         views:       fmtNum(views),
         impressions: fmtNum(imp),
         ctr:         (ctr * 100).toFixed(1) + '%',
         watchtime:   fmtNum(Math.round(watch)),
         subs:        (subs >= 0 ? '+' : '') + fmtNum(subs),
-        likes:       fmtNum(likes)
+        likes:       '—'
       });
       document.getElementById('m-views-sub').textContent = views.toLocaleString() + '회';
       document.getElementById('m-impressions-sub').textContent = imp.toLocaleString() + '회';
@@ -846,13 +853,25 @@ async function loadData() {
     state.timeseriesData = parseTimeseries(timeseries);
     renderChart(state.currentMetric);
 
+    // 2-1. 좋아요 수 (videos.list statistics)
+    try {
+      const videoIds = state.videos.map(v => v.id).join(',');
+      if (videoIds) {
+        const vStats = await ytGet('https://www.googleapis.com/youtube/v3/videos', {
+          part: 'statistics', id: videoIds
+        });
+        const totalLikes = vStats.items.reduce((sum, v) => sum + parseInt(v.statistics.likeCount || 0), 0);
+        document.getElementById('m-likes').textContent = fmtNum(totalLikes);
+      }
+    } catch(_) {}
+
     // 3. 영상별 통계 (전체 필터일 때만)
     if (!videoId) {
       const videoStats = await analyticsGet({
         ids: `channel==${state.channelId}`,
         startDate, endDate,
         dimensions: 'video',
-        metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched',
+        metrics: 'views,estimatedMinutesWatched,averageViewDuration,likes',
         sort: '-views',
         maxResults: 25
       });
@@ -872,23 +891,24 @@ async function loadData() {
 
 function parseTimeseries(data) {
   if (!data.rows) return {};
-  const result = { labels: [], views: [], impressions: [], ctr: [], watchtime: [], subs: [] };
-  data.rows.forEach(([day, views, imp, ctr, watch, subs]) => {
-    result.labels.push(day.slice(5)); // MM-DD
+  const result = { labels: [], views: [], watchtime: [], avgDuration: [], subs: [], likes: [], comments: [] };
+  data.rows.forEach(([day, views, watch, avgDur, subs, likes, comments]) => {
+    result.labels.push(day.slice(5));
     result.views.push(views);
-    result.impressions.push(imp);
-    result.ctr.push(parseFloat((ctr * 100).toFixed(2)));
     result.watchtime.push(Math.round(watch));
+    result.avgDuration.push(Math.round(avgDur));
     result.subs.push(subs);
+    result.likes.push(likes);
+    result.comments.push(comments);
   });
   return result;
 }
 
 function parseVideoStats(data) {
   if (!data.rows) return [];
-  return data.rows.map(([videoId, views, imp, ctr, watch]) => {
+  return data.rows.map(([videoId, views, watch, avgDur, likes]) => {
     const info = state.videos.find(v => v.id === videoId) || { title: videoId, thumbnail: '' };
-    return { id: videoId, title: info.title, thumbnail: info.thumbnail, views, imp, ctr, watch };
+    return { id: videoId, title: info.title, thumbnail: info.thumbnail, views, watch, avgDur, likes };
   });
 }
 
@@ -991,9 +1011,9 @@ function renderVideoTable() {
       <td class="bar-cell">
         <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(d.views/maxViews*100)}%"></div></div>
       </td>
-      <td class="num-cell">${fmtNum(d.imp)}</td>
-      <td class="num-cell">${(d.ctr * 100).toFixed(1)}%</td>
       <td class="num-cell">${fmtNum(Math.round(d.watch))}분</td>
+      <td class="num-cell">${Math.round(d.avgDur)}초</td>
+      <td class="num-cell">${fmtNum(d.likes)}</td>
     </tr>`).join('');
 
   document.getElementById('video-table-wrap').innerHTML = `
@@ -1003,9 +1023,9 @@ function renderVideoTable() {
           <th onclick="sortTable('title')">영상${arw('title')}</th>
           <th onclick="sortTable('views')" style="text-align:right;">조회수${arw('views')}</th>
           <th></th>
-          <th onclick="sortTable('imp')" style="text-align:right;">노출수${arw('imp')}</th>
-          <th onclick="sortTable('ctr')" style="text-align:right;">CTR${arw('ctr')}</th>
-          <th onclick="sortTable('watch')" style="text-align:right;">시청시간${arw('watch')}</th>
+          <th onclick="sortTable('watch')" style="text-align:right;">시청시간(분)${arw('watch')}</th>
+          <th onclick="sortTable('avgDur')" style="text-align:right;">평균시청(초)${arw('avgDur')}</th>
+          <th onclick="sortTable('likes')" style="text-align:right;">좋아요${arw('likes')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -1052,12 +1072,13 @@ async function analyticsGet(params) {
 //  UI HELPERS
 // ═══════════════════════════════════════
 function setMetricValues(v) {
-  document.getElementById('m-views').textContent       = v.views;
-  document.getElementById('m-impressions').textContent = v.impressions;
-  document.getElementById('m-ctr').textContent         = v.ctr;
-  document.getElementById('m-watchtime').textContent   = v.watchtime;
-  document.getElementById('m-subs').textContent        = v.subs;
-  document.getElementById('m-likes').textContent       = v.likes;
+  document.getElementById('m-views').textContent    = v.views;
+  document.getElementById('m-watchtime').textContent = v.watchtime;
+  document.getElementById('m-ctr').textContent      = v.ctr;
+  document.getElementById('m-subs').textContent     = v.subs;
+  document.getElementById('m-likes').textContent    = v.likes;
+  const mc = document.getElementById('m-comments');
+  if (mc) mc.textContent = v.comments || '—';
 }
 
 function fmtNum(n) {
