@@ -1787,7 +1787,7 @@ async function startTranslation() {
   state.translations = {};
 
   // 청크 단위로 번역 (한 번에 10개씩 — 429 방지)
-  const chunkSize = 5;
+  const chunkSize = 15;
   let done = 0;
   let stopped = false;
 
@@ -1822,7 +1822,7 @@ async function startTranslation() {
           break;
         } else if (is503 && retry < 2) {
           // 503은 최대 3회 재시도
-          const waitSec = (retry + 1) * 10;
+          const waitSec = (retry + 1) * 5;
           progressText.textContent =
             `⏳ 서버 과부하(503) — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
           await sleep(waitSec * 1000);
@@ -1915,8 +1915,8 @@ ${escHtml(errMsg)}
     progressBar.style.width = `${pct}%`;
     progressText.textContent = `${done} / ${langs.length} 언어 완료`;
 
-    // 청크 사이 3초 딜레이 (429 방지)
-    if (i + chunkSize < langs.length) await sleep(3000);
+    // 청크 사이 1초 딜레이
+    if (i + chunkSize < langs.length) await sleep(1000);
   }
 
   renderTranslationResults(langs);
@@ -1961,7 +1961,7 @@ OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 16384
+      maxOutputTokens: 32768
     }
   };
 
