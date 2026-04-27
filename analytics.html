@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Analytics — LAFIENA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c6cfc'/><text x='50%25' y='54%25' font-family='Arial' font-weight='900' font-size='13' fill='white' text-anchor='middle' dominant-baseline='middle'>YT</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6cfc;
+    --accent2: #fc6c8f;
+    --accent3: #6cfcb8;
+    --text: #e8e8f0;
+    --text2: #8888aa;
+    --text3: #555570;
+    --success: #6cfcb8;
+    --error: #fc6c8f;
+    --warning: #fccc6c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 12px var(--accent2);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    padding: 96px 32px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #9080ff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,108,252,0.3); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text2); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; border-radius: 8px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* ── PAGE TITLE ── */
+  .page-header {
+    margin-bottom: 32px;
+  }
+
+  .page-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .page-desc { color: var(--text2); font-size: 14px; }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 28px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .control-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  select, input[type="date"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input[type="date"]:focus {
+    border-color: var(--accent);
+  }
+
+  /* ── METRIC CARDS ── */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    transition: border-color 0.2s;
+  }
+
+  .metric-card:hover { border-color: var(--accent); }
+
+  .metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+  }
+
+  .metric-sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .metric-card.views .metric-value { color: var(--accent); }
+  .metric-card.impressions .metric-value { color: var(--accent2); }
+  .metric-card.ctr .metric-value { color: var(--warning); }
+  .metric-card.watchtime .metric-value { color: var(--accent3); }
+  .metric-card.subs .metric-value { color: #7cf0fc; }
+  .metric-card.likes .metric-value { color: #fc7cf0; }
+
+  /* ── CHART ── */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .chart-metric-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .chart-tab {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .chart-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 260px;
+  }
+
+  /* ── VIDEO TABLE ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .table-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  th:hover { color: var(--text2); }
+
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .video-thumb-sm {
+    width: 56px;
+    height: 32px;
+    border-radius: 4px;
+    object-fit: cover;
+    background: var(--surface2);
+  }
+
+  .video-title-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 320px;
+  }
+
+  .video-title-text {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .num-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .bar-cell {
+    min-width: 80px;
+  }
+
+  .bar-bg {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .alert-info { background: rgba(124,108,252,0.1); border: 1px solid rgba(124,108,252,0.3); color: #b0a8ff; }
+  .alert-warning { background: rgba(252,204,108,0.1); border: 1px solid rgba(252,204,108,0.3); color: var(--warning); }
+  .alert-error { background: rgba(252,108,143,0.1); border: 1px solid rgba(252,108,143,0.3); color: var(--accent2); }
+
+  /* ── SPINNER ── */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+
+  /* ── TOAST ── */
+  #toast-container {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+    max-width: 320px;
+  }
+
+  .toast.error { border-color: var(--accent2); color: var(--accent2); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── DATE PRESETS ── */
+  .preset-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .preset-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .preset-btn:hover, .preset-btn.active {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @media (max-width: 768px) {
+    main { padding: 80px 16px 32px; }
+    header { padding: 14px 16px; }
+    .page-title { font-size: 26px; }
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    YT Analytics
+    <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
+  </div>
+  <div class="header-right">
+    <a href="index.html" class="btn btn-ghost btn-sm" style="font-size:13px; text-decoration:none;">🌍 번역앱</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-header">
+    <div class="page-label">ANALYTICS</div>
+    <h1 class="page-title">채널 분석</h1>
+    <p class="page-desc">영상별 조회수·노출수·CTR·시청시간 추이를 확인하세요.</p>
+  </div>
+
+  <!-- 초기 로그인 안내 -->
+  <div id="auth-section">
+    <div class="alert alert-info">
+      <span>🔐</span>
+      <div>
+        YouTube 계정 로그인이 필요해요. 번역앱에서 이미 로그인했다면 아래 버튼을 클릭하세요.<br>
+        <span style="font-size:12px; margin-top:4px; display:block; color:var(--text3);">YouTube Analytics API 추가 권한이 필요해요.</span>
+      </div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <div class="control-group" style="margin-bottom:12px;">
+        <label class="control-label">YouTube OAuth Client ID</label>
+        <input type="text" id="client-id-input" placeholder="123456789-xxx.apps.googleusercontent.com"
+               style="width:100%; max-width:500px;" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" onclick="handleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Google 계정으로 로그인
+      </button>
+    </div>
+  </div>
+
+  <!-- 메인 대시보드 -->
+  <div id="dashboard" style="display:none;">
+
+    <!-- 컨트롤 -->
+    <div class="controls">
+      <div class="control-group">
+        <span class="control-label">날짜 범위</span>
+        <div class="preset-btns">
+          <button class="preset-btn active" onclick="setPreset(7, this)">7일</button>
+          <button class="preset-btn" onclick="setPreset(28, this)">28일</button>
+          <button class="preset-btn" onclick="setPreset(90, this)">90일</button>
+          <button class="preset-btn" onclick="setPreset(365, this)">1년</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">시작일</span>
+        <input type="date" id="start-date">
+      </div>
+      <div class="control-group">
+        <span class="control-label">종료일</span>
+        <input type="date" id="end-date">
+      </div>
+      <div class="control-group">
+        <span class="control-label">영상 필터</span>
+        <select id="video-filter" onchange="loadData()">
+          <option value="">전체 영상</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="loadData()" style="align-self:flex-end;">
+        🔍 조회
+      </button>
+    </div>
+
+    <!-- 요약 지표 -->
+    <div class="metric-grid" id="metric-grid">
+      <div class="metric-card views">
+        <div class="metric-label">조회수</div>
+        <div class="metric-value" id="m-views">—</div>
+        <div class="metric-sub" id="m-views-sub"></div>
+      </div>
+      <div class="metric-card impressions">
+        <div class="metric-label">노출수</div>
+        <div class="metric-value" id="m-impressions">—</div>
+        <div class="metric-sub" id="m-impressions-sub"></div>
+      </div>
+      <div class="metric-card ctr">
+        <div class="metric-label">CTR</div>
+        <div class="metric-value" id="m-ctr">—</div>
+        <div class="metric-sub">클릭률</div>
+      </div>
+      <div class="metric-card watchtime">
+        <div class="metric-label">시청시간</div>
+        <div class="metric-value" id="m-watchtime">—</div>
+        <div class="metric-sub">분</div>
+      </div>
+      <div class="metric-card subs">
+        <div class="metric-label">구독자 증감</div>
+        <div class="metric-value" id="m-subs">—</div>
+        <div class="metric-sub">기간 내 순증</div>
+      </div>
+      <div class="metric-card likes">
+        <div class="metric-label">좋아요</div>
+        <div class="metric-value" id="m-likes">—</div>
+        <div class="metric-sub">기간 내 합계</div>
+      </div>
+    </div>
+
+    <!-- 시계열 차트 -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">📈 일별 추이</div>
+        <div class="chart-metric-tabs">
+          <button class="chart-tab active" onclick="switchChartMetric('views', this)">조회수</button>
+          <button class="chart-tab" onclick="switchChartMetric('impressions', this)">노출수</button>
+          <button class="chart-tab" onclick="switchChartMetric('ctr', this)">CTR</button>
+          <button class="chart-tab" onclick="switchChartMetric('watchtime', this)">시청시간</button>
+          <button class="chart-tab" onclick="switchChartMetric('subs', this)">구독자</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="main-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- 영상별 통계 테이블 -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">🎬 영상별 통계</div>
+        <div style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text3);">
+          클릭해서 정렬 가능
+        </div>
+      </div>
+      <div id="video-table-wrap">
+        <div class="loading-state">
+          <div style="color:var(--text3);">조회 버튼을 클릭하세요</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#dashboard -->
+</main>
+
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+const state = {
+  accessToken: null,
+  clientId: null,
+  channelId: null,
+  videos: [],
+  timeseriesData: {},
+  videoStatsData: [],
+  currentMetric: 'views',
+  sortCol: 'views',
+  sortAsc: false,
+  chart: null
+};
+
+const METRIC_MAP = {
+  views:       { api: 'views',                     label: '조회수',   color: '#7c6cfc', unit: '' },
+  impressions: { api: 'impressions',               label: '노출수',   color: '#fc6c8f', unit: '' },
+  ctr:         { api: 'impressionClickThroughRate',label: 'CTR',     color: '#fccc6c', unit: '%' },
+  watchtime:   { api: 'estimatedMinutesWatched',   label: '시청시간', color: '#6cfcb8', unit: '분' },
+  subs:        { api: 'subscribersGained',         label: '구독자',   color: '#7cf0fc', unit: '' }
+};
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+window.onload = () => {
+  // 번역앱 localStorage에서 토큰/클라이언트ID 불러오기
+  const token    = localStorage.getItem('yt_localizer_access_token');
+  const expiry   = localStorage.getItem('yt_localizer_token_expiry');
+  const clientId = localStorage.getItem('yt_localizer_client_id');
+
+  if (clientId) {
+    document.getElementById('client-id-input').value = clientId;
+    state.clientId = clientId;
+  }
+
+  if (token && expiry && Date.now() < parseInt(expiry)) {
+    state.accessToken = token;
+    initDashboard();
+  }
+
+  // OAuth 콜백 처리
+  const hash = window.location.hash;
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token  = params.get('access_token');
+    const exp    = params.get('expires_in');
+    if (token) {
+      state.accessToken = token;
+      const expiry = Date.now() + parseInt(exp) * 1000;
+      localStorage.setItem('yt_localizer_access_token', token);
+      localStorage.setItem('yt_localizer_token_expiry', expiry);
+      history.replaceState(null, '', window.location.pathname);
+      initDashboard();
+    }
+  }
+
+  // 기본 날짜 설정 (7일)
+  setPreset(7);
+};
+
+// ═══════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════
+function handleLogin() {
+  const clientId = document.getElementById('client-id-input').value.trim();
+  if (!clientId) { showToast('Client ID를 입력해주세요.', 'error'); return; }
+  state.clientId = clientId;
+  localStorage.setItem('yt_localizer_client_id', clientId);
+
+  const scope = [
+    'https://www.googleapis.com/auth/youtube.readonly',
+    'https://www.googleapis.com/auth/yt-analytics.readonly'
+  ].join(' ');
+
+  const currentUrl = window.location.origin + window.location.pathname;
+  const redirectUri = currentUrl.endsWith('/') ? currentUrl : currentUrl + '/';
+  // analytics.html 로 직접 redirect 처리
+  const redirectUriPage = window.location.href.split('?')[0].split('#')[0];
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUriPage,
+    response_type: 'token',
+    scope,
+    include_granted_scopes: 'true',
+    prompt: 'consent'
+  });
+
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+async function initDashboard() {
+  document.getElementById('auth-section').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // 채널 정보 + 영상 목록 로드
+  await loadChannelAndVideos();
+  await loadData();
+}
+
+// ═══════════════════════════════════════
+//  DATE PRESETS
+// ═══════════════════════════════════════
+function setPreset(days, btn) {
+  const end   = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - days);
+
+  document.getElementById('end-date').value   = formatDateInput(end);
+  document.getElementById('start-date').value = formatDateInput(start);
+
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+function formatDateInput(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ═══════════════════════════════════════
+//  LOAD CHANNEL & VIDEOS
+// ═══════════════════════════════════════
+async function loadChannelAndVideos() {
+  try {
+    // 채널 ID
+    const ch = await ytGet('https://www.googleapis.com/youtube/v3/channels', {
+      part: 'id,contentDetails', mine: true
+    });
+    state.channelId = ch.items[0].id;
+    const uploadsId = ch.items[0].contentDetails.relatedPlaylists.uploads;
+
+    // 영상 목록 (최대 50개)
+    const pl = await ytGet('https://www.googleapis.com/youtube/v3/playlistItems', {
+      part: 'snippet', playlistId: uploadsId, maxResults: 50
+    });
+    const ids = pl.items.map(i => i.snippet.resourceId.videoId).join(',');
+
+    const vids = await ytGet('https://www.googleapis.com/youtube/v3/videos', {
+      part: 'snippet,statistics', id: ids
+    });
+
+    state.videos = vids.items.map(v => ({
+      id: v.id,
+      title: v.snippet.title,
+      thumbnail: v.snippet.thumbnails?.default?.url || ''
+    }));
+
+    // 필터 드롭다운
+    const sel = document.getElementById('video-filter');
+    sel.innerHTML = '<option value="">전체 영상</option>';
+    state.videos.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.title.slice(0, 40) + (v.title.length > 40 ? '...' : '');
+      sel.appendChild(opt);
+    });
+
+  } catch(e) {
+    showToast('채널 정보 로딩 실패: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+//  LOAD ANALYTICS DATA
+// ═══════════════════════════════════════
+async function loadData() {
+  const startDate = document.getElementById('start-date').value;
+  const endDate   = document.getElementById('end-date').value;
+  const videoId   = document.getElementById('video-filter').value;
+
+  if (!startDate || !endDate) { showToast('날짜를 선택해주세요.', 'error'); return; }
+
+  // 로딩 표시
+  document.getElementById('video-table-wrap').innerHTML =
+    `<div class="loading-state"><div class="spinner"></div><div style="margin-top:12px;">데이터 불러오는 중...</div></div>`;
+  setMetricValues({ views:'—', impressions:'—', ctr:'—', watchtime:'—', subs:'—', likes:'—' });
+
+  try {
+    const filters = videoId ? `video==${videoId}` : undefined;
+
+    // 1. 채널 전체 요약 지표
+    const summary = await analyticsGet({
+      ids: `channel==${state.channelId}`,
+      startDate, endDate,
+      metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched,subscribersGained,likes',
+      filters
+    });
+
+    if (summary.rows?.[0]) {
+      const [views, imp, ctr, watch, subs, likes] = summary.rows[0];
+      setMetricValues({
+        views:       fmtNum(views),
+        impressions: fmtNum(imp),
+        ctr:         (ctr * 100).toFixed(1) + '%',
+        watchtime:   fmtNum(Math.round(watch)),
+        subs:        (subs >= 0 ? '+' : '') + fmtNum(subs),
+        likes:       fmtNum(likes)
+      });
+      document.getElementById('m-views-sub').textContent = views.toLocaleString() + '회';
+      document.getElementById('m-impressions-sub').textContent = imp.toLocaleString() + '회';
+    }
+
+    // 2. 시계열 (일별)
+    const timeseries = await analyticsGet({
+      ids: `channel==${state.channelId}`,
+      startDate, endDate,
+      dimensions: 'day',
+      metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched,subscribersGained',
+      sort: 'day',
+      filters
+    });
+    state.timeseriesData = parseTimeseries(timeseries);
+    renderChart(state.currentMetric);
+
+    // 3. 영상별 통계 (전체 필터일 때만)
+    if (!videoId) {
+      const videoStats = await analyticsGet({
+        ids: `channel==${state.channelId}`,
+        startDate, endDate,
+        dimensions: 'video',
+        metrics: 'views,impressions,impressionClickThroughRate,estimatedMinutesWatched',
+        sort: '-views',
+        maxResults: 25
+      });
+      state.videoStatsData = parseVideoStats(videoStats);
+      renderVideoTable();
+    } else {
+      document.getElementById('video-table-wrap').innerHTML =
+        `<div class="loading-state" style="padding:30px;"><span style="color:var(--text3);">특정 영상 선택 시 영상별 테이블은 표시되지 않아요.</span></div>`;
+    }
+
+  } catch(e) {
+    showToast('데이터 로딩 실패: ' + e.message, 'error');
+    document.getElementById('video-table-wrap').innerHTML =
+      `<div class="alert alert-error" style="margin:16px;">❌ ${e.message}</div>`;
+  }
+}
+
+function parseTimeseries(data) {
+  if (!data.rows) return {};
+  const result = { labels: [], views: [], impressions: [], ctr: [], watchtime: [], subs: [] };
+  data.rows.forEach(([day, views, imp, ctr, watch, subs]) => {
+    result.labels.push(day.slice(5)); // MM-DD
+    result.views.push(views);
+    result.impressions.push(imp);
+    result.ctr.push(parseFloat((ctr * 100).toFixed(2)));
+    result.watchtime.push(Math.round(watch));
+    result.subs.push(subs);
+  });
+  return result;
+}
+
+function parseVideoStats(data) {
+  if (!data.rows) return [];
+  return data.rows.map(([videoId, views, imp, ctr, watch]) => {
+    const info = state.videos.find(v => v.id === videoId) || { title: videoId, thumbnail: '' };
+    return { id: videoId, title: info.title, thumbnail: info.thumbnail, views, imp, ctr, watch };
+  });
+}
+
+// ═══════════════════════════════════════
+//  CHART
+// ═══════════════════════════════════════
+function renderChart(metric) {
+  const d = state.timeseriesData;
+  if (!d.labels || d.labels.length === 0) return;
+
+  const m = METRIC_MAP[metric];
+  const dataArr = d[metric];
+
+  if (state.chart) state.chart.destroy();
+
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  state.chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: d.labels,
+      datasets: [{
+        label: m.label,
+        data: dataArr,
+        borderColor: m.color,
+        backgroundColor: m.color + '18',
+        borderWidth: 2,
+        pointRadius: d.labels.length > 60 ? 0 : 3,
+        pointHoverRadius: 5,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a24',
+          borderColor: '#2a2a3a',
+          borderWidth: 1,
+          titleColor: '#e8e8f0',
+          bodyColor: '#8888aa',
+          callbacks: {
+            label: ctx => `${m.label}: ${ctx.parsed.y.toLocaleString()}${m.unit}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#2a2a3a' },
+          ticks: { color: '#555570', font: { family: 'DM Mono', size: 11 }, maxTicksLimit: 12 }
+        },
+        y: {
+          grid: { color: '#2a2a3a' },
+          ticks: {
+            color: '#555570',
+            font: { family: 'DM Mono', size: 11 },
+            callback: v => fmtNum(v) + m.unit
+          }
+        }
+      }
+    }
+  });
+}
+
+function switchChartMetric(metric, btn) {
+  state.currentMetric = metric;
+  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChart(metric);
+}
+
+// ═══════════════════════════════════════
+//  VIDEO TABLE
+// ═══════════════════════════════════════
+function renderVideoTable() {
+  const data = [...state.videoStatsData];
+  const col  = state.sortCol;
+  const asc  = state.sortAsc;
+
+  data.sort((a, b) => {
+    const av = typeof a[col] === 'string' ? a[col].localeCompare(b[col]) : a[col] - b[col];
+    return asc ? av : -av;
+  });
+
+  const maxViews = Math.max(...data.map(d => d.views), 1);
+
+  const arw = (c) => state.sortCol === c ? (state.sortAsc ? ' ▲' : ' ▼') : '';
+
+  const rows = data.map(d => `
+    <tr>
+      <td>
+        <div class="video-title-cell">
+          <img class="video-thumb-sm" src="${d.thumbnail}" alt="" onerror="this.style.display='none'">
+          <span class="video-title-text" title="${escHtml(d.title)}">${escHtml(d.title)}</span>
+        </div>
+      </td>
+      <td class="num-cell">${fmtNum(d.views)}</td>
+      <td class="bar-cell">
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(d.views/maxViews*100)}%"></div></div>
+      </td>
+      <td class="num-cell">${fmtNum(d.imp)}</td>
+      <td class="num-cell">${(d.ctr * 100).toFixed(1)}%</td>
+      <td class="num-cell">${fmtNum(Math.round(d.watch))}분</td>
+    </tr>`).join('');
+
+  document.getElementById('video-table-wrap').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortTable('title')">영상${arw('title')}</th>
+          <th onclick="sortTable('views')" style="text-align:right;">조회수${arw('views')}</th>
+          <th></th>
+          <th onclick="sortTable('imp')" style="text-align:right;">노출수${arw('imp')}</th>
+          <th onclick="sortTable('ctr')" style="text-align:right;">CTR${arw('ctr')}</th>
+          <th onclick="sortTable('watch')" style="text-align:right;">시청시간${arw('watch')}</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function sortTable(col) {
+  if (state.sortCol === col) state.sortAsc = !state.sortAsc;
+  else { state.sortCol = col; state.sortAsc = false; }
+  renderVideoTable();
+}
+
+// ═══════════════════════════════════════
+//  API HELPERS
+// ═══════════════════════════════════════
+async function ytGet(url, params) {
+  const u = new URL(url);
+  Object.entries(params).forEach(([k,v]) => u.searchParams.set(k,v));
+  const res = await fetch(u, { headers: { Authorization: `Bearer ${state.accessToken}` } });
+  if (!res.ok) {
+    const e = await res.json();
+    if (res.status === 401) {
+      state.accessToken = null;
+      localStorage.removeItem('yt_localizer_access_token');
+      location.reload();
+    }
+    throw new Error(e.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function analyticsGet(params) {
+  const url = new URL('https://youtubeanalytics.googleapis.com/v2/reports');
+  Object.entries(params).forEach(([k,v]) => { if (v !== undefined) url.searchParams.set(k,v); });
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${state.accessToken}` } });
+  if (!res.ok) {
+    const e = await res.json();
+    throw new Error(e.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════
+function setMetricValues(v) {
+  document.getElementById('m-views').textContent       = v.views;
+  document.getElementById('m-impressions').textContent = v.impressions;
+  document.getElementById('m-ctr').textContent         = v.ctr;
+  document.getElementById('m-watchtime').textContent   = v.watchtime;
+  document.getElementById('m-subs').textContent        = v.subs;
+  document.getElementById('m-likes').textContent       = v.likes;
+}
+
+function fmtNum(n) {
+  const num = parseFloat(n);
+  if (isNaN(num)) return '0';
+  if (num >= 100000000) return (num/100000000).toFixed(1) + '억';
+  if (num >= 10000) return (num/10000).toFixed(1) + '만';
+  if (num >= 1000) return (num/1000).toFixed(1) + 'K';
+  return Math.round(num).toLocaleString();
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'error' ? '✗' : '✓'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>
