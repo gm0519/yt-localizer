@@ -1787,7 +1787,7 @@ async function startTranslation() {
   state.translations = {};
 
   // 청크 단위로 번역 (한 번에 10개씩 — 429 방지)
-  const chunkSize = 15;
+  const chunkSize = 8;
   let done = 0;
   let stopped = false;
 
@@ -1808,8 +1808,31 @@ async function startTranslation() {
       } catch (e) {
         const is429 = e.message.includes('429') || e.message.includes('RESOURCE_EXHAUSTED');
         const is503 = e.message.includes('503') || e.message.includes('UNAVAILABLE');
+        const isMaxTokens = e.message.includes('MAX_TOKENS') || e.message.includes('max_tokens');
 
-        if (is429) {
+        if (isMaxTokens) {
+          // MAX_TOKENS → 청크를 반으로 나눠서 재시도
+          if (retry < 2) {
+            progressText.textContent =
+              `⚠️ 토큰 한도 초과 — 청크 분할 후 재시도... (${done}/${langs.length})`;
+            // 이번 청크를 절반씩 나눠서 처리
+            const half = Math.ceil(chunk.length / 2);
+            const firstHalf = chunk.slice(0, half);
+            const secondHalf = chunk.slice(half);
+            try {
+              const r1 = await translateChunk(title, desc, firstHalf);
+              const r2 = await translateChunk(title, desc, secondHalf);
+              result = { ...r1, ...r2 };
+              break;
+            } catch(splitErr) {
+              chunkError = splitErr;
+              break;
+            }
+          } else {
+            chunkError = e;
+            break;
+          }
+        } else if (is429) {
           // 429는 재시도 없이 즉시 중단 — 키 교체 안내
           chunkError = new Error(
             '❌ Gemini API 일일 한도 초과 (429)\n' +
