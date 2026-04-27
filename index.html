@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.2</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.3</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -1947,7 +1947,6 @@ ${escHtml(errMsg)}
           await sleep(3000);
           const retryResult = await translateChunk(title, desc, emptyLangs);
           Object.assign(result, retryResult);
-          // 재번역 후에도 빈 결과면 error 표시
           for (const l of emptyLangs) {
             const t = result[l.code];
             if (!t || !t.title || t.title.trim() === '') {
@@ -1961,7 +1960,10 @@ ${escHtml(errMsg)}
         }
       }
 
+      // 청크 성공 → 즉시 state 업데이트 + UI 반영
       Object.assign(state.translations, result);
+      chunk.forEach(l => updateTranslationItem(l.code));
+      document.getElementById('btn-next-4').disabled = false;
     }
 
     done += chunk.length;
@@ -2061,17 +2063,22 @@ OUTPUT FORMAT — return EXACTLY this structure, nothing else:
   let parsed = null;
   const attempts = [];
 
-  // 1차: 직접
-  try { parsed = JSON.parse(rawText); attempts.push('직접파싱 성공'); }
+  // 0차: 코드블럭 제거 전처리 (Gemini가 ```json으로 감싸는 경우 대비)
+  let cleanedText = rawText
+    .replace(/^```(?:json)?\s*/im, '')
+    .replace(/\s*```\s*$/m, '')
+    .trim();
+
+  // 1차: 전처리된 텍스트 직접 파싱
+  try { parsed = JSON.parse(cleanedText); attempts.push('직접파싱 성공'); }
   catch (e1) { attempts.push(`직접파싱 실패: ${e1.message}`); }
 
-  // 2차: 마크다운 코드블럭 제거
+  // 2차: 원본 rawText로 직접 파싱
   if (!parsed) {
     try {
-      const clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      parsed = JSON.parse(clean);
-      attempts.push('코드블럭제거 성공');
-    } catch (e2) { attempts.push(`코드블럭제거 실패: ${e2.message}`); }
+      parsed = JSON.parse(rawText);
+      attempts.push('원본파싱 성공');
+    } catch (e2) { attempts.push(`원본파싱 실패: ${e2.message}`); }
   }
 
   // 3차: 중괄호 depth 추적으로 정확한 JSON 범위 추출
