@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--text3); font-family:'DM Mono',monospace; background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:2px 7px;">v1.4.0</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.0</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -2000,7 +2000,7 @@ TRANSLATION RULES:
 8. CRITICAL JSON SAFETY: All string values must be properly JSON-encoded.
    - Never use unescaped double quotes inside string values
    - Replace actual newlines in values with \n
-   - Special characters in non-Latin scripts (Mongolian, Arabic, Hebrew, etc.) must be included as-is (UTF-8), NOT escaped as \uXXXX unless necessary
+   - Special characters in non-Latin scripts (Mongolian, Arabic, Hebrew, etc.) must be included as-is (UTF-8), NOT escaped as unicode sequences unless necessary
    - Do NOT add trailing commas
 
 ORIGINAL TITLE:
