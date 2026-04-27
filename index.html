@@ -1138,6 +1138,7 @@
       🌍 전체 번역 시작
     </button>
     <span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text2);" id="translate-progress-text"></span>
+    <span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--accent3);" id="translate-timer"></span>
   </div>
 
   <div class="progress-bar-wrap" id="translate-progress-wrap" style="display:none;">
@@ -1786,6 +1787,18 @@ async function startTranslation() {
 
   state.translations = {};
 
+  // 초단위 카운트 타이머
+  const startTime = Date.now();
+  const timerEl = document.getElementById('translate-timer');
+  if (timerEl) timerEl.textContent = '0초';
+  const timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    if (timerEl) timerEl.textContent = elapsed < 60
+      ? `${elapsed}초`
+      : `${Math.floor(elapsed/60)}분 ${elapsed%60}초`;
+  }, 1000);
+  state._timerInterval = timerInterval;
+
   // 청크 단위로 번역 (한 번에 10개씩 — 429 방지)
   const chunkSize = 8;
   let done = 0;
@@ -1801,7 +1814,7 @@ async function startTranslation() {
     let chunkError = null;
 
     // 429는 최대 3회 재시도 / 그 외 오류는 즉시 중단
-    for (let retry = 0; retry < 3; retry++) {
+    for (let retry = 0; retry < 5; retry++) {
       try {
         result = await translateChunk(title, desc, chunk);
         break;
@@ -1845,7 +1858,7 @@ async function startTranslation() {
           break;
         } else if (is503 && retry < 2) {
           // 503은 최대 3회 재시도
-          const waitSec = (retry + 1) * 5;
+          const waitSec = (retry + 1) * 15;
           progressText.textContent =
             `⏳ 서버 과부하(503) — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
           await sleep(waitSec * 1000);
@@ -1865,11 +1878,19 @@ async function startTranslation() {
       // 콘솔 로그
       console.error('[YT Localizer] 번역 오류:', chunkError);
 
-      // 완료된 부분만 결과 렌더링
+      // 완료된 언어 + 실패 언어 모두 렌더링
       const doneLangs = langs.slice(0, done);
-      if (doneLangs.length > 0) {
-        renderTranslationResults(doneLangs);
-        document.getElementById('btn-next-4').disabled = false;
+      const failedLangList = chunk; // 실패한 청크의 언어들
+      // 실패 언어를 error로 state에 등록
+      failedLangList.forEach(l => {
+        if (!state.translations[l.code]) {
+          state.translations[l.code] = { title: '', description: '', error: true, failed: true };
+        }
+      });
+      const allRenderedLangs = [...doneLangs, ...failedLangList];
+      if (allRenderedLangs.length > 0) {
+        renderTranslationResults(allRenderedLangs);
+        document.getElementById('btn-next-4').disabled = doneLangs.length === 0;
       }
 
       // 에러 상세 박스
@@ -1892,14 +1913,20 @@ async function startTranslation() {
           <div style="font-size:12px; background:rgba(0,0,0,0.3); border-radius:6px; padding:10px; font-family:'DM Mono',monospace; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto; line-height:1.6;">
 ${escHtml(errMsg)}
           </div>
-          <div style="font-size:12px; color:var(--text2);">
-            실패 언어는 개별 [재번역] 버튼으로 다시 시도하세요.
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="retryFailedLangs()">
+              🔄 실패 언어 일괄 재번역
+            </button>
+            <span style="font-size:12px; color:var(--text2); display:flex; align-items:center;">
+              또는 개별 [재번역] 버튼으로 다시 시도
+            </span>
           </div>
         </div>`);
 
+      if (state._timerInterval) { clearInterval(state._timerInterval); state._timerInterval = null; }
       btn.disabled = false;
       btn.innerHTML = '🔄 전체 재번역';
-      showToast('번역 중단됨 — 에러 박스 확인', 'error');
+      showToast('번역 중단됨 — 실패 언어 일괄 재번역 가능', 'error');
       return;
     }
 
@@ -1942,11 +1969,13 @@ ${escHtml(errMsg)}
     if (i + chunkSize < langs.length) await sleep(1000);
   }
 
+  if (state._timerInterval) { clearInterval(state._timerInterval); state._timerInterval = null; }
   renderTranslationResults(langs);
   btn.disabled = false;
   btn.innerHTML = '🔄 전체 재번역';
   document.getElementById('btn-next-4').disabled = false;
-  showToast(`${langs.length}개 언어 번역 완료! 🎉`, 'success');
+  const elapsed = document.getElementById('translate-timer')?.textContent || '';
+  showToast(`${langs.length}개 언어 번역 완료! (${elapsed}) 🎉`, 'success');
 }
 
 async function translateChunk(title, desc, langs) {
@@ -2097,6 +2126,42 @@ OUTPUT FORMAT (raw JSON only, no \`\`\` wrapping):
   }
 
   return parsed.translations || {};
+}
+
+async function retryFailedLangs() {
+  // 실패한 언어만 모아서 재번역
+  const failedLangs = state.allLangs.filter(l =>
+    state.translations[l.code]?.error || state.translations[l.code]?.failed
+  );
+  if (failedLangs.length === 0) { showToast('실패한 언어가 없어요.', 'success'); return; }
+
+  const title = document.getElementById('source-title').value.trim();
+  const desc = document.getElementById('source-desc').value.trim();
+  const btn = document.querySelector('[onclick="retryFailedLangs()"]');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:1.5px;display:inline-block;margin-right:6px;"></div> 재번역 중...'; }
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const chunkSize = 8;
+  let successCount = 0;
+
+  for (let i = 0; i < failedLangs.length; i += chunkSize) {
+    const chunk = failedLangs.slice(i, i + chunkSize);
+    try {
+      const result = await translateChunk(title, desc, chunk);
+      Object.assign(state.translations, result);
+      chunk.forEach(l => {
+        const t = state.translations[l.code];
+        if (t && t.title) { t.error = false; t.failed = false; successCount++; }
+        updateTranslationItem(l.code);
+      });
+    } catch(e) {
+      console.error('실패 언어 재번역 오류:', e);
+    }
+    if (i + chunkSize < failedLangs.length) await sleep(2000);
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '🔄 실패 언어 일괄 재번역'; }
+  showToast(`${successCount}개 언어 재번역 완료!`, 'success');
 }
 
 async function retranslateLang(code) {
