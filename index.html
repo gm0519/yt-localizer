@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.5</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.6</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -2066,13 +2066,14 @@ OUTPUT FORMAT — return EXACTLY this structure, nothing else:
   // 0차: 코드블럭 제거 전처리 (여러 패턴 대응)
   // ```json ... ``` / ``` ... ``` / 앞뒤 공백 등 모두 제거
   let cleanedText = rawText.trim();
-  // 앞쪽 코드블럭 제거 (```json 또는 ``` 로 시작하는 경우)
-  cleanedText = cleanedText.replace(/^```[a-zA-Z]*
-?/, '');
-  // 뒤쪽 코드블럭 제거
-  cleanedText = cleanedText.replace(/
-?```\s*$/, '');
-  cleanedText = cleanedText.trim();
+  // 앞쪽 ```json 또는 ``` 코드블럭 제거
+  if (cleanedText.startsWith('```')) {
+    cleanedText = cleanedText.replace(/^```[a-zA-Z]*/, '').trim();
+  }
+  // 뒤쪽 ``` 제거
+  if (cleanedText.endsWith('```')) {
+    cleanedText = cleanedText.slice(0, cleanedText.lastIndexOf('```')).trim();
+  }
 
   // 1차: 전처리된 텍스트 직접 파싱
   try { parsed = JSON.parse(cleanedText); attempts.push('코드블럭제거 후 파싱 성공'); }
