@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.4</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.7</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -1807,7 +1807,7 @@ async function startTranslation() {
   state._timerInterval = timerInterval;
 
   // 1개씩 비동기 5개 동시 처리
-  const CONCURRENCY = 5;
+  const CONCURRENCY = 3;
   let done = 0;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const progressBar = document.getElementById('translate-progress-bar');
@@ -1828,7 +1828,7 @@ async function startTranslation() {
         const is429 = e.message.includes('429') || e.message.includes('RESOURCE_EXHAUSTED');
         const is503 = e.message.includes('503') || e.message.includes('UNAVAILABLE');
         if ((is429 || is503) && retry < MAX_RETRY - 1) {
-          const waitSec = is429 ? 30 : (retry + 1) * 10;
+          const waitSec = is429 ? 30 : (retry + 1) * 20;
           console.warn(`[${lang.name}] ${is429 ? '429' : '503'} — ${waitSec}초 대기 후 재시도`);
           await sleep(waitSec * 1000);
         } else {
@@ -1859,8 +1859,8 @@ async function startTranslation() {
     progressText.textContent = `${done} / ${langs.length} 언어 완료`;
     document.getElementById('btn-next-4').disabled = false;
 
-    // 배치 사이 1초 딜레이
-    if (i + CONCURRENCY < langs.length) await sleep(1000);
+    // 배치 사이 3초 딜레이 (서버 부하 방지)
+    if (i + CONCURRENCY < langs.length) await sleep(3000);
   }
 
   if (state._timerInterval) { clearInterval(state._timerInterval); state._timerInterval = null; }
@@ -2474,13 +2474,29 @@ async function registerAll() {
     const existingLocalizations = existingRes.items?.[0]?.localizations || {};
 
     // 2. 기존 데이터 + 새 번역 병합 (새 번역이 기존 덮어씀)
-    // 언어 코드 교정 맵 (Gemini가 구버전 코드 반환 시 대비)
+    // 언어 코드 교정 맵 (구버전 → 현재 코드)
     const CODE_FIX = { 'iw': 'he', 'ji': 'yi', 'jw': 'jv', 'in': 'id' };
+    const CODE_FIX_REVERSE = { 'he': 'iw', 'yi': 'ji', 'jv': 'jw', 'id': 'in' };
 
-    const localizations = { ...existingLocalizations };
+    // 기존 데이터에서 구버전 코드 항목 제거 (중복 방지)
+    const cleanedExisting = { ...existingLocalizations };
+    for (const [oldCode, newCode] of Object.entries(CODE_FIX)) {
+      if (cleanedExisting[oldCode]) {
+        // 구버전 코드가 있으면 현재 코드로 이전 후 구버전 제거
+        if (!cleanedExisting[newCode]) {
+          cleanedExisting[newCode] = cleanedExisting[oldCode];
+        }
+        delete cleanedExisting[oldCode];
+      }
+    }
+
+    const localizations = { ...cleanedExisting };
     for (const [code, t] of Object.entries(state.translations)) {
       if (!t.error && !t.pending && !t.notSent && t.title && t.title.trim()) {
         const fixedCode = CODE_FIX[code] || code;
+        // 구버전 코드 중복 제거
+        const reverseCode = CODE_FIX_REVERSE[fixedCode];
+        if (reverseCode) delete localizations[reverseCode];
         localizations[fixedCode] = {
           title: t.title.slice(0, 100),
           description: t.description || ''
@@ -2504,6 +2520,29 @@ async function registerAll() {
 
     if (invalidKeys.length > 0) {
       console.warn('등록 제외된 언어 (빈 제목):', invalidKeys);
+    }
+
+    // 디버그: 문제 가능한 항목 콘솔 출력
+    const debugIssues = [];
+    for (const [code, val] of Object.entries(localizations)) {
+      if (!val.title || val.title.trim() === '') debugIssues.push(`[빈제목] ${code}`);
+      else if (val.title.length > 100) debugIssues.push(`[100자초과:${val.title.length}] ${code}: ${val.title.slice(0,50)}`);
+      else if (val.description === undefined || val.description === null) debugIssues.push(`[설명없음] ${code}`);
+      // 제어문자 체크
+      if (val.title && /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(val.title)) debugIssues.push(`[제어문자-제목] ${code}`);
+      if (val.description && /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(val.description)) debugIssues.push(`[제어문자-설명] ${code}`);
+    }
+    if (debugIssues.length > 0) {
+      console.warn('[YT Localizer] 등록 전 문제 항목:', debugIssues);
+    } else {
+      console.log('[YT Localizer] 등록 전 유효성 체크 통과:', Object.keys(localizations).length, '개');
+    }
+    console.log('[YT Localizer] 전송 localizations 키 목록:', Object.keys(localizations));
+
+    // 제어문자 제거 (안전 처리)
+    for (const [code, val] of Object.entries(localizations)) {
+      if (val.title) localizations[code].title = val.title.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').slice(0, 100);
+      if (val.description) localizations[code].description = val.description.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
     }
 
     progressText.textContent = `기존 ${Object.keys(existingLocalizations).length}개 + 새 번역 ${Object.keys(state.translations).length}개 → 총 ${Object.keys(localizations).length}개 전송 중... (${invalidKeys.length}개 빈 제목 제외)`;
