@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.4.9</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.0</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -2404,10 +2404,14 @@ async function registerAll() {
     const existingLocalizations = existingRes.items?.[0]?.localizations || {};
 
     // 2. 기존 데이터 + 새 번역 병합 (새 번역이 기존 덮어씀)
+    // 언어 코드 교정 맵 (Gemini가 구버전 코드 반환 시 대비)
+    const CODE_FIX = { 'iw': 'he', 'ji': 'yi', 'jw': 'jv', 'in': 'id' };
+
     const localizations = { ...existingLocalizations };
     for (const [code, t] of Object.entries(state.translations)) {
-      if (!t.error && t.title) {
-        localizations[code] = {
+      if (!t.error && !t.pending && !t.notSent && t.title && t.title.trim()) {
+        const fixedCode = CODE_FIX[code] || code;
+        localizations[fixedCode] = {
           title: t.title.slice(0, 100),
           description: t.description || ''
         };
