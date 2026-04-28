@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.3</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.4</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -1806,173 +1806,61 @@ async function startTranslation() {
   }, 1000);
   state._timerInterval = timerInterval;
 
-  // 청크 단위로 번역 (한 번에 10개씩 — 429 방지)
-  const chunkSize = 10;
+  // 1개씩 비동기 5개 동시 처리
+  const CONCURRENCY = 5;
   let done = 0;
-  let stopped = false;
-
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const progressBar = document.getElementById('translate-progress-bar');
   const progressText = document.getElementById('translate-progress-text');
 
-  for (let i = 0; i < langs.length; i += chunkSize) {
-    const chunk = langs.slice(i, i + chunkSize);
-    let result = null;
-    let chunkError = null;
-
-    // 429는 최대 3회 재시도 / 그 외 오류는 즉시 중단
-    for (let retry = 0; retry < 5; retry++) {
+  // 단일 언어 번역 + 재시도 래퍼
+  async function translateOne(lang) {
+    const MAX_RETRY = 3;
+    for (let retry = 0; retry < MAX_RETRY; retry++) {
       try {
-        result = await translateChunk(title, desc, chunk);
-        break;
-      } catch (e) {
+        const result = await translateSingle(title, desc, lang);
+        if (!result.title || result.title.trim() === '') {
+          if (retry < MAX_RETRY - 1) { await sleep(2000); continue; }
+          return { title: '', description: '', error: true, emptyResult: true };
+        }
+        return result;
+      } catch(e) {
         const is429 = e.message.includes('429') || e.message.includes('RESOURCE_EXHAUSTED');
         const is503 = e.message.includes('503') || e.message.includes('UNAVAILABLE');
-        const isMaxTokens = e.message.includes('MAX_TOKENS') || e.message.includes('max_tokens');
-
-        if (isMaxTokens) {
-          // MAX_TOKENS → 청크를 반으로 나눠서 재시도
-          if (retry < 2) {
-            progressText.textContent =
-              `⚠️ 토큰 한도 초과 — 청크 분할 후 재시도... (${done}/${langs.length})`;
-            // 이번 청크를 절반씩 나눠서 처리
-            const half = Math.ceil(chunk.length / 2);
-            const firstHalf = chunk.slice(0, half);
-            const secondHalf = chunk.slice(half);
-            try {
-              const r1 = await translateChunk(title, desc, firstHalf);
-              const r2 = await translateChunk(title, desc, secondHalf);
-              result = { ...r1, ...r2 };
-              break;
-            } catch(splitErr) {
-              chunkError = splitErr;
-              break;
-            }
-          } else {
-            chunkError = e;
-            break;
-          }
-        } else if (is429) {
-          // 429는 재시도 없이 즉시 중단 — 키 교체 안내
-          chunkError = new Error(
-            '❌ Gemini API 일일 한도 초과 (429)\n' +
-            '오늘 사용 가능한 무료 요청 횟수를 모두 사용했어요.\n' +
-            '해결 방법:\n' +
-            '① 매일 오후 4시(한국시간)에 자동 리셋 — 내일 다시 시도\n' +
-            '② 다른 Gemini API Key로 교체 후 재시도\n' +
-            '   (설정 화면에서 키 변경 가능)'
-          );
-          break;
-        } else if (is503 && retry < 2) {
-          // 503은 최대 3회 재시도
-          const waitSec = (retry + 1) * 15;
-          progressText.textContent =
-            `⏳ 서버 과부하(503) — ${waitSec}초 후 재시도... (${done}/${langs.length})`;
+        if ((is429 || is503) && retry < MAX_RETRY - 1) {
+          const waitSec = is429 ? 30 : (retry + 1) * 10;
+          console.warn(`[${lang.name}] ${is429 ? '429' : '503'} — ${waitSec}초 대기 후 재시도`);
           await sleep(waitSec * 1000);
         } else {
-          chunkError = e;
-          break;
+          return { title: '', description: '', error: true, errMsg: e.message };
         }
       }
     }
+    return { title: '', description: '', error: true };
+  }
 
-    // 에러 발생 시 즉시 중단
-    if (chunkError) {
-      stopped = true;
-      progressBar.style.background = 'var(--error)';
-      progressText.textContent = `❌ 번역 중단 (${done}/${langs.length} 완료)`;
+  // 5개씩 병렬 처리
+  for (let i = 0; i < langs.length; i += CONCURRENCY) {
+    const batch = langs.slice(i, i + CONCURRENCY);
 
-      // 콘솔 로그
-      console.error('[YT Localizer] 번역 오류:', chunkError);
+    // 배치 내 병렬 실행
+    const results = await Promise.all(batch.map(l => translateOne(l)));
 
-      // 실패한 청크 → error로 표시
-      chunk.forEach(l => {
-        state.translations[l.code] = { title: '', description: '', error: true, failed: true };
-        updateTranslationItem(l.code);
-      });
-      // 미전송 언어 → pending 유지 (이미 렌더링됨)
-      langs.slice(done + chunk.length).forEach(l => {
-        state.translations[l.code] = { title: '', description: '', pending: true, notSent: true };
-        updateTranslationItem(l.code);
-      });
-      document.getElementById('btn-next-4').disabled = done === 0;
+    // 결과 즉시 반영
+    results.forEach((result, idx) => {
+      const l = batch[idx];
+      state.translations[l.code] = result;
+      updateTranslationItem(l.code);
+    });
 
-      // 에러 상세 박스
-      const failedLangNames = chunk.map(l => l.name).join(', ');
-      const errMsg = chunkError.message || String(chunkError);
-      const resultWrap = document.getElementById('translation-results');
-
-      // 기존 에러 박스 제거 후 새로 삽입
-      document.querySelectorAll('.debug-error-box').forEach(el => el.remove());
-
-      resultWrap.insertAdjacentHTML('beforebegin', `
-        <div class="alert alert-error debug-error-box" style="margin-bottom:16px; flex-direction:column; gap:8px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span>❌</span>
-            <strong>번역 중단 — ${done}/${langs.length}개 완료</strong>
-          </div>
-          <div style="font-size:13px;">
-            <b>실패 언어:</b> ${failedLangNames}
-          </div>
-          <div style="font-size:12px; background:rgba(0,0,0,0.3); border-radius:6px; padding:10px; font-family:'DM Mono',monospace; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto; line-height:1.6;">
-${escHtml(errMsg)}
-          </div>
-          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <button class="btn btn-secondary btn-sm" onclick="retryFailedLangs()">
-              🔄 실패 언어 일괄 재번역
-            </button>
-            <span style="font-size:12px; color:var(--text2); display:flex; align-items:center;">
-              또는 개별 [재번역] 버튼으로 다시 시도
-            </span>
-          </div>
-        </div>`);
-
-      if (state._timerInterval) { clearInterval(state._timerInterval); state._timerInterval = null; }
-      btn.disabled = false;
-      btn.innerHTML = '🔄 전체 재번역';
-      showToast('번역 중단됨 — 실패 언어 일괄 재번역 가능', 'error');
-      return;
-    }
-
-    if (result) {
-      // 빈 번역 결과 감지 → 해당 언어만 자동 재번역 (최대 1회)
-      const emptyLangs = chunk.filter(l => {
-        const t = result[l.code];
-        return !t || !t.title || t.title.trim() === '';
-      });
-
-      if (emptyLangs.length > 0) {
-        progressText.textContent = `⚠️ ${emptyLangs.map(l=>l.name).join(', ')} 빈 결과 — 자동 재번역 중...`;
-        try {
-          await sleep(3000);
-          const retryResult = await translateChunk(title, desc, emptyLangs);
-          Object.assign(result, retryResult);
-          for (const l of emptyLangs) {
-            const t = result[l.code];
-            if (!t || !t.title || t.title.trim() === '') {
-              result[l.code] = { title: '', description: '', error: true, emptyResult: true };
-            }
-          }
-        } catch(e) {
-          for (const l of emptyLangs) {
-            result[l.code] = { title: '', description: '', error: true, emptyResult: true };
-          }
-        }
-      }
-
-      // 청크 성공 → 즉시 state 업데이트 + UI 반영
-      Object.assign(state.translations, result);
-      chunk.forEach(l => updateTranslationItem(l.code));
-      document.getElementById('btn-next-4').disabled = false;
-    }
-
-    done += chunk.length;
+    done += batch.length;
     const pct = Math.round((done / langs.length) * 100);
     progressBar.style.width = `${pct}%`;
     progressText.textContent = `${done} / ${langs.length} 언어 완료`;
+    document.getElementById('btn-next-4').disabled = false;
 
-    // 청크 사이 5초 딜레이 (순간 버스트 429 방지)
-    if (i + chunkSize < langs.length) await sleep(5000);
+    // 배치 사이 1초 딜레이
+    if (i + CONCURRENCY < langs.length) await sleep(1000);
   }
 
   if (state._timerInterval) { clearInterval(state._timerInterval); state._timerInterval = null; }
@@ -2029,6 +1917,82 @@ ${escHtml(errMsg)}
   btn.disabled = false;
   btn.innerHTML = '🔄 전체 재번역';
   document.getElementById('btn-next-4').disabled = false;
+}
+
+async function translateSingle(title, desc, lang) {
+  // 1개 언어 번역 — JSON 파싱 오류 없음, 응답 단순
+  const prompt = `You are a professional translator for a Korean YouTube music playlist channel.
+
+TRANSLATION RULES:
+1. Translate ALL Korean text into the target language. Every Korean word/sentence must be translated.
+2. Keep English words, brand names, proper nouns, URLs, and symbols exactly as-is.
+   Example: "들자마자 고양이가 반응하는 플리 | JazzHop Groove · Focus BGM"
+   → English(en): "The playlist cats react to instantly | JazzHop Groove · Focus BGM"
+3. Title: 100 characters max. Shorten naturally if needed.
+4. Preserve ALL line breaks exactly as in the original.
+5. Tone: trendy, urban, suitable for 20-40 year olds.
+6. Korean hashtags (#카페BGM): translate Korean part only, keep # and English words.
+7. Return ONLY raw JSON, no markdown, no explanation.
+
+ORIGINAL TITLE:
+${title}
+
+ORIGINAL DESCRIPTION (line breaks as \n):
+${desc.replace(/\n/g, '\\n')}
+
+TARGET LANGUAGE: ${lang.name} (${lang.code})
+
+OUTPUT (raw JSON only):
+{"title":"translated title here","description":"translated description here"}`;
+
+  const reqBody = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 8192,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          title: { type: 'STRING' },
+          description: { type: 'STRING' }
+        },
+        required: ['title', 'description']
+      }
+    }
+  };
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody) }
+  );
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    const is429 = res.status === 429 || errBody.includes('429') || errBody.includes('RESOURCE_EXHAUSTED');
+    const is503 = res.status === 503 || errBody.includes('503') || errBody.includes('UNAVAILABLE');
+    throw new Error(`Gemini API ${res.status}${is429 ? ' 429' : ''}${is503 ? ' 503' : ''}: ${errBody.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const candidate = data.candidates?.[0];
+  if (!candidate) throw new Error('응답 없음');
+  if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+    throw new Error(`생성 중단 (${candidate.finishReason})`);
+  }
+
+  const rawText = candidate.content?.parts?.[0]?.text || '';
+  if (!rawText) throw new Error('빈 응답');
+
+  // JSON 파싱
+  let parsed = null;
+  try { parsed = JSON.parse(rawText); } catch(_) {}
+  if (!parsed) {
+    const clean = rawText.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+    try { parsed = JSON.parse(clean); } catch(_) {}
+  }
+  if (!parsed) throw new Error('JSON 파싱 실패');
+  return parsed;
 }
 
 async function translateChunk(title, desc, langs) {
