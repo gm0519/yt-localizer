@@ -921,7 +921,7 @@
     <div class="logo-dot"></div>
     YT Localizer
     <span style="font-size:12px; color:var(--text3); font-weight:400; font-family:'DM Mono',monospace;">by LAFIENA</span>
-    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.0</span>
+    <span style="font-size:11px; color:var(--accent3); font-family:'DM Mono',monospace; background:rgba(108,252,184,0.1); border:1px solid rgba(108,252,184,0.3); border-radius:4px; padding:2px 7px;">v1.5.1</span>
   </div>
   <div class="header-status">
     <div class="status-badge" id="badge-gemini">
@@ -1977,11 +1977,58 @@ ${escHtml(errMsg)}
 
   if (state._timerInterval) { clearInterval(state._timerInterval); state._timerInterval = null; }
   renderTranslationResults(langs);
+
+  // ── 번역 결과 없음(emptyResult) 자동 재번역 ──
+  const emptyAfterAll = langs.filter(l => {
+    const t = state.translations[l.code];
+    return !t || t.emptyResult || (!t.title && !t.error);
+  });
+
+  if (emptyAfterAll.length > 0) {
+    progressText.textContent = `⚠️ 빈 결과 ${emptyAfterAll.length}개 언어 자동 재번역 중...`;
+    progressBar.style.background = 'var(--warning)';
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const title = document.getElementById('source-title').value.trim();
+    const desc = document.getElementById('source-desc').value.trim();
+    const chunkSize = 5;
+
+    for (let i = 0; i < emptyAfterAll.length; i += chunkSize) {
+      const chunk = emptyAfterAll.slice(i, i + chunkSize);
+      try {
+        await sleep(2000);
+        const result = await translateChunk(title, desc, chunk);
+        Object.assign(state.translations, result);
+        chunk.forEach(l => updateTranslationItem(l.code));
+      } catch(e) {
+        console.warn('빈 결과 재번역 실패:', e.message);
+      }
+    }
+
+    // 재번역 후 최종 확인
+    const stillEmpty = langs.filter(l => {
+      const t = state.translations[l.code];
+      return !t || !t.title || t.title.trim() === '';
+    });
+
+    if (stillEmpty.length > 0) {
+      progressText.textContent = `⚠️ ${stillEmpty.length}개 언어 번역 실패 — 개별 재번역 필요`;
+      progressBar.style.background = 'var(--error)';
+      showToast(`번역 완료 (${langs.length - stillEmpty.length}/${langs.length}) — ${stillEmpty.length}개 실패`, 'error');
+    } else {
+      progressBar.style.background = 'linear-gradient(90deg, var(--accent), var(--accent2))';
+      progressText.textContent = `✅ 전체 ${langs.length}개 언어 번역 완료!`;
+      showToast(`${langs.length}개 언어 전체 번역 완료! 🎉`, 'success');
+    }
+  } else {
+    const elapsed = document.getElementById('translate-timer')?.textContent || '';
+    progressText.textContent = `✅ ${langs.length}개 언어 번역 완료!`;
+    showToast(`${langs.length}개 언어 번역 완료! (${elapsed}) 🎉`, 'success');
+  }
+
   btn.disabled = false;
   btn.innerHTML = '🔄 전체 재번역';
   document.getElementById('btn-next-4').disabled = false;
-  const elapsed = document.getElementById('translate-timer')?.textContent || '';
-  showToast(`${langs.length}개 언어 번역 완료! (${elapsed}) 🎉`, 'success');
 }
 
 async function translateChunk(title, desc, langs) {
