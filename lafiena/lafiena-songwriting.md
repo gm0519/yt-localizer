@@ -148,3 +148,152 @@
 - bridge 위치 고정 금지 (chorus 2 직후 고정 패턴 금지)
 - verse 확장(1-1 / 2-1) / ad-lib / instrumental break 삽입 위치 분산
 - 13곡 중 최소 5가지 다른 구조 패턴 사용
+
+---
+
+# 🚨 STRUCTURE DIVERSITY ENFORCEMENT (CRITICAL)
+
+## 목적
+
+플레이리스트 내 모든 트랙이
+실제 다른 곡처럼 느껴지도록
+구조·섹션 흐름·엔딩 방식을 강제로 분산한다.
+
+단순히 단어만 다른 동일 구조 반복 절대 금지.
+
+---
+
+# 📐 STRUCTURE ID SYSTEM
+
+한 플레이리스트 내 동일 STRUCTURE ID 재사용 금지.
+
+생성 전 반드시 각 트랙의 구조 ID를 먼저 결정 후 작사 시작.
+
+## STRUCTURE A
+Hook → Verse → Pre → Chorus → Verse → Chorus → Bridge → Final Chorus
+
+## STRUCTURE B
+Intro → Verse → Verse Extension → Chorus → Instrumental Break → Chorus → Outro
+
+## STRUCTURE C
+Hook → Verse Split → Instrumental 2bar → Verse Continuation → Chorus → Bridge → Hook Repeat
+
+## STRUCTURE D
+Intro → Verse → Chorus → Ad-lib Section → Chorus Variation → Beat Cut Outro
+
+## STRUCTURE E
+Verse → Verse → Chorus Late Entry → Bridge → Final Hook → Ambient Outro
+
+## STRUCTURE F
+Hook → Verse → Chorus → Instrumental Jam → Spoken-style Bridge → Final Chorus
+
+## STRUCTURE G
+Intro → Verse → Pre → Chorus → Breakdown → Bridge → Double Chorus
+
+## STRUCTURE H
+Verse → Instrumental Intro Drop → Chorus → Verse Extension → Final Refrain
+
+※ 최소 5개 이상의 서로 다른 STRUCTURE 사용 필수
+※ 동일 STRUCTURE 2곡 연속 절대 금지
+
+---
+
+# 🚫 CHORUS 반복 제한 규칙
+
+❌ 단순 Chorus 반복만으로 러닝타임 확보 금지
+
+길이 확보 우선순위:
+
+1. Verse Extension
+2. Instrumental Break
+3. Ad-lib Section
+4. Hook Variation
+5. Bridge Expansion
+6. Duet Overlap
+7. Chorus Repeat (최후 수단)
+
+---
+
+# 🎬 OUTRO 다양성 강제 규칙
+
+플레이리스트 내 동일 Outro 스타일 반복 금지.
+
+## Outro 타입 풀
+
+- Full Chorus Fade
+- Spoken Phrase Ending
+- Instrumental Only Fade
+- Beat Cut Ending
+- Layered Ad-lib Fade
+- Hook Loop Fade
+- Ambient Vocal Tail
+- No Outro
+- Sudden Stop
+- Harmony Stack Ending
+
+❌ "(stay close~)" 형태의 단일 괄호 문장 Outro
+플레이리스트 내 2회 이상 사용 금지
+
+❌ 모든 곡 ending을 괄호 감성 문장으로 마무리 금지
+
+---
+
+# 🧩 SECTION 다양성 규칙
+
+반드시 분산 사용할 요소:
+
+- instrumental break
+- instrumental 2bar
+- ad-lib section
+- verse split
+- chorus variation
+- breakdown
+- refrain
+- spoken texture
+- hook repeat
+- ambient tail
+
+❌ 동일 섹션 배치 반복 금지
+❌ Bridge 위치 고정 금지
+❌ Chorus 진입 타이밍 반복 금지
+
+---
+
+# ⏱️ 러닝타임 확보 규칙 (CRITICAL)
+
+목표 러닝타임:
+2:50 ~ 3:50
+
+최소:
+2:30 이하 절대 금지
+
+러닝타임 확보 시 우선적으로:
+
+- Verse 길이 확장
+- Hook 반복 변주
+- Instrumental 구간 추가
+- Chorus Variation
+- Bridge 확장
+- Ad-lib 레이어
+- Outro 연장
+
+사용할 것.
+
+❌ 짧은 구조 + 반복 Chorus만으로 시간 채우기 금지
+
+---
+
+# ✅ 생성 전 내부 체크 (필수)
+
+각 트랙 생성 전 반드시 내부적으로 아래 항목 확인:
+
+- STRUCTURE ID
+- Intro / Hook 타입
+- Chorus 진입 위치
+- Break 위치
+- Bridge 위치
+- Outro 타입
+- Instrumental 사용 여부
+- Hook 반복 여부
+
+중복률 높으면 생성 후 재작성 필수.
