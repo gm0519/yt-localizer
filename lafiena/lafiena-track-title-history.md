@@ -377,3 +377,33 @@
 11-260522-One More Reason-Female / 105 BPM
 12-260522-Gravity at Play-Duet / 107 BPM
 13-260522-Still Your Groove-Male / 109 BPM
+
+
+01-260525-Rooftop Polaroid Hearts
+02-260525-Cinnamon Staticline
+03-260525-Marble Aftertaste
+04-260525-Cherry Motel Echoes
+05-260525-Midnight Corduroy Cinema
+06-260525-Papermoon Roulette
+07-260525-Tangerine Exit Signs
+08-260525-Blur Beneath Neon
+09-260525-Satellite Swimming Lessons
+10-260525-Velvet Taxi Theory
+11-260525-Bluebird Counterspell
+12-260525-Silver Arcade Ritual
+13-260525-Honeydialogue Mirage
+
+01-260526-Side Effects
+02-260526-Talk Later
+03-260526-Nothing Serious
+04-260526-Too Much Coffee
+05-260526-Out All Morning
+06-260526-No New Messages
+07-260526-Lucky in the City
+08-260526-Weekend Receipt
+09-260526-Running on Ice
+10-260526-Backseat Favorite
+11-260526-Fast Enough for Me
+12-260526-Same Song Again
+13-260526-Lights Still On
+
