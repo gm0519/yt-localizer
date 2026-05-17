@@ -17,7 +17,7 @@
 ([outro] (+hook))
 
 ※ () = 선택사항 / 모든 곡 동일 구조 금지 — 파트 순서·길이·반복 횟수 곡마다 다르게
-※ 맨 앞의 [Hook] 또는 [unique (악기명) intro] 둘 중의 1개 선택 필수
+※ 맨 앞의 [Hook] 또는 [unique (악기명) intro] 둘 중의 1개 선택 필수!! 바로 [verse 1] 스타트 금지!
 
 ---
 
@@ -182,7 +182,7 @@ Hook → Verse Split → Instrumental 2bar → Verse Continuation → Chorus →
 Intro → Verse → Chorus → Ad-lib Section → Chorus Variation → Beat Cut Outro
 
 ## STRUCTURE E
-Verse → Verse → Chorus Late Entry → Bridge → Final Hook → Ambient Outro
+Hook → Verse → Verse → Chorus Late Entry → Bridge → Final Hook → Ambient Outro
 
 ## STRUCTURE F
 Hook → Verse → Chorus → Instrumental Jam → Spoken-style Bridge → Final Chorus
@@ -191,7 +191,7 @@ Hook → Verse → Chorus → Instrumental Jam → Spoken-style Bridge → Final
 Intro → Verse → Pre → Chorus → Breakdown → Bridge → Double Chorus
 
 ## STRUCTURE H
-Verse → Instrumental Intro Drop → Chorus → Verse Extension → Final Refrain
+Hook → Verse → Instrumental Intro Drop → Chorus → Verse Extension → Final Refrain
 
 ※ 최소 5개 이상의 서로 다른 STRUCTURE 사용 필수
 ※ 동일 STRUCTURE 2곡 연속 절대 금지
