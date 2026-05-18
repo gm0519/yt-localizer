@@ -76,9 +76,10 @@
 
 필수 구조 요소:
 
-- Verse 1 (4~6줄) + Verse 2 (4~6줄)
+- Verse 1 (5~6줄) + Verse 2 (5~6줄)
 - Pre-chorus 또는 verse extension (2~4줄)
 - Chorus 최소 3회 반복
+- Chorus 최소 6줄 이상
 - Bridge (3~5줄)
 - [instrumental break] 또는 [ad-lib] 여백 구간
 - Final chorus + outro
@@ -98,7 +99,10 @@
 - Rap / Melodic rap 섹션 (선택적 사용)
 - Verse extension (1-1 / 2-1 split vs single block)
 - Outro 무게 (light fade / full outro / hook repeat)
-
+- 13곡 중 [outro] 태그 사용 최대 5곡 / 나머지는 생략 또는 hook repeat / chorus fade로 마무리
+- [outro] 사용 시에도 () 한 줄 고정 금지 — 2줄 이상 / full line / hook repeat 등 다양하게
+- 세트 실행 전 13곡 아웃트로 방식 미리 배분 후 실행
+  
 ---
 
 # 🎵 작사 스타일 원칙
@@ -122,10 +126,11 @@
 
 **Hook 시작:**
 
-- 가사 맨 앞에 아래 태그 1개만 출력 후 바로 가사 시작
-- `[hook-vocal starts clean, no humming, no pre-vocalization, no breath, no ad-libs, no ornament, no melisma, dry vocal entry on first word]`
+- 가사 맨 앞에 아래 태그 1개만 출력 후 구조태그 없이 바로 가사 시작
+- `[hook-vocal starts clean...]`
 - ❌ [hook] 태그 별도 추가 금지 / 훅 태그 중복 금지
-
+- ❌ hook 태그 직후 [verse] / [chorus] 등 구조태그 삽입 금지 — 가사 바로 시작
+  
 **Intro 시작 (05·07·11번 트랙 고정):**
 
 - 가사 맨 앞에 아래 태그 출력
