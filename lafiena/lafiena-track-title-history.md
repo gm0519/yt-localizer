@@ -393,3 +393,31 @@
 12-260525-Silver Arcade Ritual
 13-260525-Honeydialogue Mirage
 
+01-260526-Move Before You Think-Male / 107 BPM
+02-260526-Rhythm Found Me First-Male / 109 BPM
+03-260526-Caught in the Pocket-Duet / 108 BPM
+04-260526-Electric Shoulders-Female / 105 BPM
+05-260526-Drop Into It-Male / 110 BPM
+06-260526-That Feeling Again-Male / 106 BPM
+07-260526-Can't Stay Still-Male / 108 BPM
+08-260526-Bones Already Know-Female / 107 BPM
+09-260526-Neon in My Feet-Male / 109 BPM
+10-260526-No Warning Just Groove-Male / 106 BPM
+11-260526-Lift Without Trying-Female / 107 BPM
+12-260526-Automatic-Duet / 108 BPM
+13-260526-This Is the One-Male / 110 BPM
+
+01-260527-Two Sugars In-Male / 104 BPM
+02-260527-Foam Theory-Male / 107 BPM
+03-260527-Idle Sip-Duet / 105 BPM
+04-260527-Mellow Pour-Female / 103 BPM
+05-260527-Counter Seat-Male / 108 BPM
+06-260527-Afternoon Rush-Male / 106 BPM
+07-260527-Drip Side-Male / 104 BPM
+08-260527-Blend Right In-Male / 107 BPM
+09-260527-Window Booth-Male / 105 BPM
+10-260527-Stir the Light-Female / 108 BPM
+11-260527-Ambient Order-Female / 106 BPM
+12-260527-Latte Logic-Duet / 104 BPM
+13-260527-Roast and Roll-Male / 107 BPM
+
