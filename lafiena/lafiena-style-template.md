@@ -55,11 +55,11 @@ synth fill, vocal run, ad-libs, strings, melisma, vibrato, belting, heavy EDM, U
 
 ### 그루브#1 (Groovy Pop)
 
-bright groovy pop with hip-hop / R&B influence, [BPM] BPM, [Key Pool], soft electric piano chords with warm sunny bounce, light acoustic guitar strums, live bass with easy groove, crisp rim clicks and light snaps, easy swinging hi-hats, [Vocal Gender], [Vocal Texture], smooth syncopated flow, Money chord 1-5-3-6, catchy melody, hit song style, trendy vocal, no humming, no filler sounds
+bright groovy pop with hip-hop / R&B influence, [BPM] BPM, [Key Pool], soft electric piano chords with warm sunny bounce, light acoustic guitar strums, live bass with easy groove, crisp rim clicks and light snaps, easy swinging hi-hats, [Vocal Gender], [Vocal Texture], smooth syncopated flow, Money chord, catchy melody, hit song style, trendy vocal, no humming, no filler sounds
 
 ### 그루브#2 (Organic Groovy Pop)
 
-genre: "Organic Groovy Pop", mood: "sunny, energetic, refreshing, motivating", tempo: "[BPM] BPM, steady groove, infectious bounce", key: "[Key Pool]", lead: "bright fingerpicked electric guitar, money chord", beat: "crisp acoustic drums with steady groove, subtle percussion", vocal: "[Vocal Gender], [Vocal Texture]", production: "dry mix, organic texture, no distortion, high-fidelity"
+genre: "Organic Groovy Pop", mood: "sunny, energetic, refreshing, motivating", tempo: "[BPM] BPM, steady groove, infectious bounce", key: "[Key Pool]", lead: "bright strummed electric guitar, catchy melody", beat: "crisp acoustic drums with steady groove, subtle percussion", vocal: "[Vocal Gender], [Vocal Texture]", production: "dry mix, organic texture, no distortion, high-fidelity"
 
 ### 그루브#3 (Jazzy Pop)
 
