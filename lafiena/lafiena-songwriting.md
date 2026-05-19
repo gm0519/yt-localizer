@@ -126,8 +126,8 @@
 
 **Hook 시작:**
 
-- 가사 맨 앞에 아래 태그 1개만 출력 후 구조태그 없이 바로 가사 시작
-- `[hook-vocal starts clean...]`
+- 가사 맨 앞에 아래 태그 1개만 출력 후 바로 가사 시작
+- `[hook: punchy kick, full band, bold vocal drop — no humming, no pre-vocalization, no breath, no ad-libs, no ornament, no melisma, dry vocal entry on first word]`
 - ❌ [hook] 태그 별도 추가 금지 / 훅 태그 중복 금지
 - ❌ hook 태그 직후 [verse] / [chorus] 등 구조태그 삽입 금지 — 가사 바로 시작
   
