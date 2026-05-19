@@ -421,3 +421,16 @@
 12-260527-Latte Logic-Duet / 104 BPM
 13-260527-Roast and Roll-Male / 107 BPM
 
+01-260528-Swagger Check-Male / 107 BPM
+02-260528-Nonchalant Energy-Male / 105 BPM
+03-260528-Play Your Cards Right-Duet / 109 BPM
+04-260528-Velvet Trigger-Female / 104 BPM
+05-260528-Too Busy Being Cool-Male / 108 BPM
+06-260528-Drip Economy-Male / 106 BPM
+07-260528-Move at Your Own Pace-Female / 107 BPM
+08-260528-Unfiltered Bounce-Male / 110 BPM
+09-260528-Zero Apology-Male / 106 BPM
+10-260528-Control the Room-Male / 108 BPM
+11-260528-Effortless Standard-Female / 105 BPM
+12-260528-Sharp Instinct-Duet / 107 BPM
+13-260528-Own the Room-Male / 109 BPM
