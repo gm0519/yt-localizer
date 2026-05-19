@@ -45,8 +45,7 @@ synth fill, vocal run, ad-libs, strings, melisma, vibrato, belting, heavy EDM, U
 - 보컬 성별 [Vocal Gender]: [Male / Female / Duet] (트랙 번호별 고정 규칙 준수)
 - 보컬 질감 [Vocal Texture]:
   Gritty Sing-Rap: gritty raspy tone, heavy vocal fry, raw chest texture, loose unpolished delivery, natural phrasing with no affectation
-  Dry Talk-Rap
-  dry raspy tone, deadpan rhythmic delivery, casual talk-rap with a trendy nonchalant groove
+  Dry Talk-Rap: dry raspy tone, deadpan rhythmic delivery, casual talk-rap with a trendy nonchalant groove
   Modern Edgy: modern edgy tone, slight gravelly texture, clear but unpolished delivery, melodic sing-rap with playful grit
 - 추천 키 풀 [Key Pool]:
   그루브#1 용: G Major, C Major, D Major, A Major
