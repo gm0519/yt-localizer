@@ -434,3 +434,20 @@
 11-260528-Effortless Standard-Female / 105 BPM
 12-260528-Sharp Instinct-Duet / 107 BPM
 13-260528-Own the Room-Male / 109 BPM
+
+01-260529-Fine Tuned-Male / 107 BPM
+02-260529-Picking Up the Detail-Male / 105 BPM
+03-260529-Texture Test-Duet / 109 BPM
+04-260529-Acute Sense-Female / 104 BPM
+05-260529-Dial It In-Male / 108 BPM
+06-260529-Wired for It-Male / 106 BPM
+07-260529-Hear Through It-Male / 107 BPM
+08-260529-Notch Filter-Female / 105 BPM
+09-260529-Tuned to You-Male / 108 BPM
+10-260529-Pitch Perfect Feeling-Male / 106 BPM
+11-260529-Clear Reception-Female / 107 BPM
+12-260529-What You Catch-Duet / 105 BPM
+13-260529-The Listening Kind-Male / 109 BPM
+
+
+
