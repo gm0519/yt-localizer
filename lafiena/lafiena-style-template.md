@@ -36,6 +36,7 @@ synth fill, vocal run, ad-libs, strings, melisma, vibrato, belting, heavy EDM, U
 [프로덕션] production: "clean mix, minimal arrangement, space between elements, wide stereo, high-fidelity"
 [사운드 시그니처] money chord (세련된 코드감 확보를 위해 필수 포함)
 [단수형 사용] "guitars" 대신 "guitar" 사용 (AI 사운드 뭉침 방지)
+[Hook 시작 트랙 전용] 스타일 프롬프트 끝에 추가: starts with bold hook entry, no build-up intro, full energy from bar 1, tight punch
 
 ### 그루브 가변 요소 풀 (Variable Element Pools)
 
