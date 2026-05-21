@@ -47,22 +47,18 @@ synth fill, vocal run, ad-libs, strings, melisma, vibrato, belting, heavy EDM, U
   Gritty Sing-Rap: gritty raspy tone, heavy vocal fry, raw chest texture, loose unpolished delivery, natural phrasing with no affectation
   Dry Talk-Rap: dry raspy tone, deadpan rhythmic delivery, casual talk-rap with a trendy nonchalant groove
   Modern Edgy: modern edgy tone, slight gravelly texture, clear but unpolished delivery, melodic sing-rap with playful grit
-- 추천 키 풀 [Key Pool]:
-  그루브#1 용: G Major, C Major, D Major, A Major
-  그루브#2 용: G Major, C Major, E Major, D Major
-  그루브#3 용: F Major, Bb Major, C Major, Eb Major
 
 ### 그루브#1 (Groovy Pop)
 
-bright groovy pop with hip-hop / R&B influence, [BPM] BPM, [Key Pool], soft electric piano chords with warm sunny bounce, light acoustic guitar strums, live bass with easy groove, crisp rim clicks and light snaps, easy swinging hi-hats, [Vocal Gender], [Vocal Texture], smooth syncopated flow, Money chord, catchy melody, hit song style, trendy vocal, no humming, no filler sounds
+bright groovy pop with hip-hop / R&B influence, [BPM] BPM, Major Key, soft electric piano chords with warm sunny bounce, light acoustic guitar strums, live bass with easy groove, crisp rim clicks and light snaps, easy swinging hi-hats, [Vocal Gender], [Vocal Texture], smooth syncopated flow, Money chord, catchy melody, hit song style, trendy vocal, no humming, no filler sounds
 
 ### 그루브#2 (Organic Groovy Pop)
 
-genre: "Organic Groovy Pop with hip-hop", mood: "sunny, energetic, refreshing, motivating, hit song style", tempo: "[BPM] BPM, steady groove, infectious bounce", key: "[Key Pool]", lead: "bright strummed electric guitar, money chord, catchy melody", beat: "crisp acoustic drums with steady groove, subtle percussion", vocal: "[Vocal Gender], [Vocal Texture]", production: "dry mix, organic texture, no distortion, high-fidelity"
+genre: "Organic Groovy Pop with hip-hop", mood: "sunny, energetic, refreshing, motivating, hit song style", tempo: "[BPM] BPM, steady groove, infectious bounce", key: "Major Key", lead: "bright strummed electric guitar, money chord, catchy melody", beat: "crisp acoustic drums with steady groove, subtle percussion", vocal: "[Vocal Gender], [Vocal Texture]", production: "dry mix, organic texture, no distortion, high-fidelity"
 
 ### 그루브#3 (Jazzy Pop)
 
-genre: "Bright Jazzy Pop, Jazz-Hop with hip-hop", mood: "high-spirited, euphoric, sophisticated, hit song style", tempo: "[BPM] BPM, rhythmic bounce, steady groove", key: "[Key Pool]", lead: "sparkling Rhodes, jazzy money chord guitar", beat: "crisp funky drums, tight rhythmic bassline", vocal: "[Vocal Gender], [Vocal Texture]", production: "modern polished, minimal arrangement, wide stereo, high-fidelity, space between elements"
+genre: "Bright Jazzy Pop, Jazz-Hop with hip-hop", mood: "high-spirited, euphoric, sophisticated, hit song style", tempo: "[BPM] BPM, rhythmic bounce, steady groove", key: "Major Key", lead: "sparkling Rhodes, jazzy money chord guitar", beat: "crisp funky drums, tight rhythmic bassline", vocal: "[Vocal Gender], [Vocal Texture]", production: "modern polished, minimal arrangement, wide stereo, high-fidelity, space between elements"
 
 ---
 
