@@ -58,11 +58,11 @@ bright groovy pop with hip-hop / R&B influence, [BPM] BPM, [Key Pool], soft elec
 
 ### 그루브#2 (Organic Groovy Pop)
 
-genre: "Organic Groovy Pop", mood: "sunny, energetic, refreshing, motivating", tempo: "[BPM] BPM, steady groove, infectious bounce", key: "[Key Pool]", lead: "bright strummed electric guitar, catchy melody", beat: "crisp acoustic drums with steady groove, subtle percussion", vocal: "[Vocal Gender], [Vocal Texture]", production: "dry mix, organic texture, no distortion, high-fidelity"
+genre: "Organic Groovy Pop with hip-hop", mood: "sunny, energetic, refreshing, motivating, hit song style", tempo: "[BPM] BPM, steady groove, infectious bounce", key: "[Key Pool]", lead: "bright strummed electric guitar, money chord, catchy melody", beat: "crisp acoustic drums with steady groove, subtle percussion", vocal: "[Vocal Gender], [Vocal Texture]", production: "dry mix, organic texture, no distortion, high-fidelity"
 
 ### 그루브#3 (Jazzy Pop)
 
-genre: "Bright Jazzy Pop, Jazz-Hop", mood: "high-spirited, euphoric, sophisticated", tempo: "[BPM] BPM, rhythmic bounce, steady groove", key: "[Key Pool]", lead: "sparkling Rhodes, jazzy money chord guitar", beat: "crisp funky drums, tight rhythmic bassline", vocal: "[Vocal Gender], [Vocal Texture]", production: "modern polished, minimal arrangement, wide stereo, high-fidelity, space between elements"
+genre: "Bright Jazzy Pop, Jazz-Hop with hip-hop", mood: "high-spirited, euphoric, sophisticated, hit song style", tempo: "[BPM] BPM, rhythmic bounce, steady groove", key: "[Key Pool]", lead: "sparkling Rhodes, jazzy money chord guitar", beat: "crisp funky drums, tight rhythmic bassline", vocal: "[Vocal Gender], [Vocal Texture]", production: "modern polished, minimal arrangement, wide stereo, high-fidelity, space between elements"
 
 ---
 
